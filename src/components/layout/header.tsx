@@ -112,17 +112,17 @@ export function Header() {
             <button
               type="button"
               onClick={() => navigate('/offline-queue')}
-              className="hidden items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900 lg:flex dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200"
+              className="hidden items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-3 text-xs text-amber-900 h-9 lg:flex dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200"
             >
               <WifiOff className="size-3.5" />
               {offline ? `Offline — ${pendingQueue} cards waiting` : `${pendingQueue} cards waiting to sync`}
             </button>
           )}
 
-          <Button variant="outline" size="sm" className="hidden gap-2 sm:inline-flex" onClick={() => setSearchOpen(true)}>
-            <Search className="size-3.5" />
-            <span className="text-muted-foreground">Search…</span>
-            <kbd className="rounded border border-border bg-muted px-1 text-[10px]">⌘K</kbd>
+          <Button variant="outline" className="hidden h-9 min-w-[12rem] justify-start gap-2 sm:inline-flex" onClick={() => setSearchOpen(true)}>
+            <Search className="size-4 shrink-0" />
+            <span className="flex-1 text-left text-muted-foreground">Search…</span>
+            <kbd className="rounded border border-border bg-muted px-1.5 text-[10px] leading-none">⌘K</kbd>
           </Button>
           <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => setSearchOpen(true)} aria-label="Search">
             <Search className="size-4" />

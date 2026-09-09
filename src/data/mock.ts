@@ -560,23 +560,23 @@ export const offlineQueue: OfflineQueueItem[] = [
 ]
 
 export const notifications: NotificationItem[] = [
-  { id: 'n1', orgId: 'org-nexus', userId: 'user-nexus-admin', type: 'follow_up', title: 'Follow-up overdue', message: 'Priya Shah WhatsApp follow-up is overdue.', read: false, priority: 'high', createdAt: '2026-09-09T17:05:00Z' },
-  { id: 'n2', orgId: 'org-nexus', userId: 'user-nexus-1', type: 'ocr', title: 'OCR needs review', message: '1 card has low-confidence fields.', read: false, priority: 'normal', createdAt: '2026-09-09T13:20:00Z' },
-  { id: 'n3', orgId: 'org-nexus', userId: 'user-nexus-admin', type: 'crm', title: 'CRM sync failed', message: 'REST API sync failed for Marcus Cole.', read: true, priority: 'high', createdAt: '2026-09-09T11:51:00Z' },
+  { id: 'n1', orgId: 'org-nexus', userId: 'user-nexus-admin', type: 'follow_up', title: 'Follow-up overdue', message: 'Priya Shah WhatsApp follow-up is overdue. Reminder was scheduled after Tech Expo and should be completed today to keep the lead warm.', read: false, priority: 'high', createdAt: '2026-09-09T17:05:00Z' },
+  { id: 'n2', orgId: 'org-nexus', userId: 'user-nexus-1', type: 'ocr', title: 'OCR needs review', message: '1 card has low-confidence fields. Open review to confirm phone and email before saving the contact.', read: false, priority: 'normal', createdAt: '2026-09-09T13:20:00Z' },
+  { id: 'n3', orgId: 'org-nexus', userId: 'user-nexus-admin', type: 'crm', title: 'CRM sync failed', message: 'REST API sync failed for Marcus Cole. Check credentials and retry from Sync Center when ready.', read: true, priority: 'high', createdAt: '2026-09-09T11:51:00Z' },
   { id: 'n4', orgId: null, userId: 'user-super', type: 'system', title: 'OCR service degraded', message: 'OCR latency elevated in us-east-1.', read: false, priority: 'normal', createdAt: '2026-09-09T08:30:00Z' },
-  { id: 'n5', orgId: 'org-nexus', userId: 'user-nexus-1', type: 'lead', title: 'Hot lead assigned', message: 'Jordan Lee was marked hot after Tech Expo.', read: false, priority: 'high', createdAt: '2026-09-09T15:40:00Z' },
+  { id: 'n5', orgId: 'org-nexus', userId: 'user-nexus-1', type: 'lead', title: 'Hot lead assigned', message: 'Jordan Lee was marked hot after Tech Expo. Follow up within 24 hours while interest is highest.', read: false, priority: 'high', createdAt: '2026-09-09T15:40:00Z' },
   { id: 'n6', orgId: 'org-nexus', userId: 'user-nexus-1', type: 'communication', title: 'Email delivered', message: 'Thank-you email reached jordan.lee@brightwave.io.', read: true, priority: 'low', createdAt: '2026-09-08T18:05:00Z' },
   { id: 'n7', orgId: 'org-nexus', userId: 'user-nexus-1', type: 'team', title: 'New teammate invited', message: 'Alex Rivera joined Nexus Events Co.', read: true, priority: 'normal', createdAt: '2026-09-08T09:12:00Z' },
   { id: 'n8', orgId: 'org-nexus', userId: 'user-nexus-admin', type: 'lead', title: 'Lead moved to Qualified', message: 'Priya Shah entered Qualified stage.', read: false, priority: 'normal', createdAt: '2026-09-09T10:16:00Z' },
-  { id: 'n9', orgId: 'org-nexus', userId: 'user-nexus-admin', type: 'ticket', title: 'New support ticket', message: 'OCR low confidence on glossy cards (#tkt-1042).', read: false, priority: 'high', createdAt: '2026-09-09T11:02:00Z' },
+  { id: 'n9', orgId: 'org-nexus', userId: 'user-nexus-admin', type: 'ticket', title: 'New support ticket', message: 'OCR low confidence on glossy cards (#tkt-1042). Support is investigating capture tips for laminate finishes.', read: false, priority: 'high', createdAt: '2026-09-09T11:02:00Z' },
   { id: 'n10', orgId: 'org-nexus', userId: 'user-nexus-1', type: 'ticket', title: 'Ticket reply', message: 'Support replied on your OCR ticket.', read: false, priority: 'normal', createdAt: '2026-09-09T12:11:00Z' },
   { id: 'n11', orgId: 'org-nexus', userId: 'user-nexus-admin', type: 'automation', title: 'Automation failed', message: 'Overdue follow-up nudge failed (mock channel).', read: false, priority: 'high', createdAt: '2026-09-05T08:01:00Z' },
   { id: 'n12', orgId: 'org-nexus', userId: 'user-nexus-admin', type: 'automation', title: 'Automation completed', message: 'Tech Expo enterprise welcome ran successfully.', read: true, priority: 'low', createdAt: '2026-09-09T16:40:30Z' },
   { id: 'n13', orgId: 'org-nexus', userId: 'user-nexus-admin', type: 'sync', title: 'Sync failure', message: 'Offline batch retry needed for Marcus Cole.', read: false, priority: 'high', createdAt: '2026-09-09T15:05:00Z' },
-  { id: 'n14', orgId: 'org-nexus', userId: 'user-nexus-1', type: 'event', title: 'Event activity', message: 'Tech Expo crossed 300 cards scanned.', read: false, priority: 'normal', createdAt: '2026-09-09T17:00:00Z' },
-  { id: 'n15', orgId: 'org-nexus', userId: 'user-nexus-admin', type: 'billing', title: 'Usage threshold', message: 'Card usage at 82% of Business plan quota.', read: false, priority: 'normal', createdAt: '2026-09-09T09:00:00Z' },
+  { id: 'n14', orgId: 'org-nexus', userId: 'user-nexus-1', type: 'event', title: 'Event activity', message: 'Tech Expo crossed 300 cards scanned. Team presence is strong at Booth B and Registration.', read: false, priority: 'normal', createdAt: '2026-09-09T17:00:00Z' },
+  { id: 'n15', orgId: 'org-nexus', userId: 'user-nexus-admin', type: 'billing', title: 'Usage threshold', message: 'Card usage at 82% of Business plan quota. Consider upgrading before the next event to avoid throttling.', read: false, priority: 'normal', createdAt: '2026-09-09T09:00:00Z' },
   { id: 'n16', orgId: 'org-nexus', userId: 'user-nexus-admin', type: 'cms', title: 'Version published', message: 'Home CMS content published as version 3.', read: true, priority: 'low', createdAt: '2026-09-09T14:05:00Z' },
-  { id: 'n17', orgId: 'org-nexus', userId: 'user-nexus-admin', type: 'recovery', title: 'Recovery event', message: 'John Smith moved to Recently Deleted.', read: false, priority: 'normal', createdAt: '2026-09-09T17:01:00Z' },
+  { id: 'n17', orgId: 'org-nexus', userId: 'user-nexus-admin', type: 'recovery', title: 'Recovery event', message: 'John Smith moved to Recently Deleted. Restore within the retention window if this was accidental.', read: false, priority: 'normal', createdAt: '2026-09-09T17:01:00Z' },
 ]
 
 export const auditLogs: AuditLog[] = [
