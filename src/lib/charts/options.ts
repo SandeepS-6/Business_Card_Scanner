@@ -84,8 +84,13 @@ export function buildChartOption(props: AppChartProps, theme = readChartTheme())
       name: s.label,
       type: props.kind === 'bar' || props.kind === 'stackedBar' ? ('bar' as const) : ('line' as const),
       data: seriesValues(props, s.key),
-      itemStyle: { color: colors[i] },
-      emphasis: { focus: 'series' as const },
+      itemStyle: { color: colors[i], borderRadius: [4, 4, 0, 0] },
+      emphasis: {
+        focus: 'series' as const,
+        itemStyle: { shadowBlur: 8, shadowColor: 'rgba(0,0,0,0.12)' },
+      },
+      animationDuration: 600,
+      animationEasing: 'cubicOut' as const,
     }
     if (props.kind === 'area') {
       return { ...base, areaStyle: { opacity: 0.15 }, smooth: true, showSymbol: false }
@@ -96,13 +101,27 @@ export function buildChartOption(props: AppChartProps, theme = readChartTheme())
     if (props.kind === 'stackedBar') {
       return { ...base, stack: 'total', barMaxWidth: 36 }
     }
-    return { ...base, barMaxWidth: 36 }
+    return {
+      ...base,
+      barMaxWidth: 40,
+      showBackground: true,
+      backgroundStyle: {
+        color: 'rgba(180, 180, 180, 0.2)',
+        borderRadius: [4, 4, 0, 0],
+      },
+    }
   })
 
   const option: EChartsOption = {
     color: colors,
+    animation: true,
+    animationDuration: 600,
+    animationEasing: 'cubicOut',
     grid: baseGrid(),
-    tooltip: tooltip(theme),
+    tooltip: {
+      ...tooltip(theme),
+      axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(0,0,0,0.04)' } },
+    },
     legend: props.series.length > 1 ? { top: 0, textStyle: { color: theme.muted, fontSize: 11 } } : undefined,
     xAxis: {
       type: 'category',

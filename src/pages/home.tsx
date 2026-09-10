@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { BarChart3, CalendarPlus, ClipboardList, Contact, Download, Table2, UserPlus } from 'lucide-react'
 import { useApp } from '@/context/app-context'
 import { PageHeader } from '@/components/shared/page-header'
 import { CapturePanel } from '@/components/capture/capture-panel'
-import { AppChart } from '@/components/charts/app-chart'
+import { AppChart, type AppChartHandle } from '@/components/charts/app-chart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { CardSkeleton } from '@/components/ui/skeleton'
@@ -25,6 +25,7 @@ export function HomePage() {
   const canExport = can(user?.role, 'CAPTURE')
   const [period, setPeriod] = useState<'daily' | 'monthly'>('daily')
   const [view, setView] = useState<'chart' | 'table'>('chart')
+  const chartApi = useRef<AppChartHandle>(null)
 
   useEffect(() => {
     if (params.get('mode') === 'upload' || params.get('focus') === 'capture') {
@@ -118,18 +119,20 @@ export function HomePage() {
             ))}
       </div>
 
-      <Card className="mb-6 overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
-          <h2 className="min-w-0 text-sm font-medium text-foreground sm:text-base">
+      <div className="mb-6 overflow-hidden rounded-lg bg-card">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-muted/60 px-4 py-3">
+          <h2 className="min-w-0 font-display text-base font-semibold text-foreground">
             Cards scanned ({period === 'daily' ? 'daily' : 'monthly'}) ({rangeLabel})
           </h2>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex h-9 items-center rounded-full border border-border bg-muted/40 p-0.5" role="group" aria-label="Period">
+            <div className="inline-flex h-9 items-center rounded-full bg-background/80 p-0.5" role="group" aria-label="Period">
               <button
                 type="button"
                 className={cn(
                   'h-8 rounded-full px-3 text-sm transition-colors',
-                  period === 'daily' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted',
+                  period === 'daily'
+                    ? 'bg-primary text-sm font-semibold text-primary-foreground'
+                    : 'text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground',
                 )}
                 aria-pressed={period === 'daily'}
                 onClick={() => setPeriod('daily')}
@@ -140,7 +143,9 @@ export function HomePage() {
                 type="button"
                 className={cn(
                   'h-8 rounded-full px-3 text-sm transition-colors',
-                  period === 'monthly' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted',
+                  period === 'monthly'
+                    ? 'bg-primary text-sm font-semibold text-primary-foreground'
+                    : 'text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground',
                 )}
                 aria-pressed={period === 'monthly'}
                 onClick={() => setPeriod('monthly')}
@@ -148,12 +153,12 @@ export function HomePage() {
                 Monthly
               </button>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               <Button
                 type="button"
                 size="icon"
-                variant={view === 'chart' ? 'default' : 'outline'}
-                className="size-9"
+                variant="ghost"
+                className={cn('size-9', view === 'chart' && 'bg-primary/10 text-primary')}
                 aria-label="Chart view"
                 aria-pressed={view === 'chart'}
                 onClick={() => setView('chart')}
@@ -163,31 +168,69 @@ export function HomePage() {
               <Button
                 type="button"
                 size="icon"
-                variant={view === 'table' ? 'default' : 'outline'}
-                className="size-9"
+                variant="ghost"
+                className={cn('size-9', view === 'table' && 'bg-primary/10 text-primary')}
                 aria-label="Table view"
                 aria-pressed={view === 'table'}
                 onClick={() => setView('table')}
               >
                 <Table2 className="size-4" />
               </Button>
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                className="size-9"
-                aria-label="Download"
-                disabled={!canExport}
-                onClick={() => toast.success(canExport ? 'Export queued (mock CSV)' : 'No export permission')}
-              >
-                <Download className="size-4" />
-              </Button>
+              <div className="group relative">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="size-9"
+                  aria-label="Download"
+                  aria-haspopup="menu"
+                  disabled={!canExport}
+                >
+                  <Download className="size-4" />
+                </Button>
+                <div
+                  role="menu"
+                  className="invisible absolute right-0 top-full z-20 mt-1 min-w-[8.5rem] rounded-md bg-popover py-1 text-popover-foreground opacity-0 shadow-md transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="flex w-full px-3 py-2 text-left text-sm font-medium hover:bg-muted"
+                    disabled={!canExport}
+                    onClick={() => {
+                      if (!canExport) {
+                        toast.error('No export permission')
+                        return
+                      }
+                      void chartApi.current?.exportExcel()
+                    }}
+                  >
+                    Excel
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="flex w-full px-3 py-2 text-left text-sm font-medium hover:bg-muted"
+                    disabled={!canExport}
+                    onClick={() => {
+                      if (!canExport) {
+                        toast.error('No export permission')
+                        return
+                      }
+                      void chartApi.current?.exportPng()
+                    }}
+                  >
+                    PNG
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div className="p-4">
-          {view === 'chart' ? (
+        <div className="relative p-4">
+          <div className={cn(view === 'chart' ? 'relative' : 'pointer-events-none absolute left-0 top-0 w-full opacity-0')}>
             <AppChart
+              ref={chartApi}
               bare
               id="home-cards-scanned"
               title="Cards scanned"
@@ -197,31 +240,32 @@ export function HomePage() {
               rows={scanRows}
               height={260}
               loading={isLoading}
-              canExport={false}
+              canExport={canExport}
               emptyMessage="No scan activity for this period."
             />
-          ) : (
+          </div>
+          {view === 'table' ? (
             <div className="overflow-x-auto scrollbar-none">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border text-left text-muted-foreground">
-                    <th className="px-2 py-2 font-medium">{period === 'daily' ? 'Day' : 'Month'}</th>
-                    <th className="px-2 py-2 font-medium">Cards scanned</th>
+                  <tr className="text-left text-muted-foreground">
+                    <th className="px-2 py-2 text-sm font-medium">{period === 'daily' ? 'Day' : 'Month'}</th>
+                    <th className="px-2 py-2 text-sm font-medium">Cards scanned</th>
                   </tr>
                 </thead>
                 <tbody>
                   {scanRows.map((r) => (
-                    <tr key={String(r.day)} className="border-b border-border/60">
-                      <td className="px-2 py-2">{String(r.day)}</td>
+                    <tr key={String(r.day)}>
+                      <td className="px-2 py-2 font-medium">{String(r.day)}</td>
                       <td className="px-2 py-2 tabular-nums">{Number(r.scans ?? 0)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          )}
+          ) : null}
         </div>
-      </Card>
+      </div>
 
       <div className="mb-6 flex flex-wrap gap-2">
         <Button variant="secondary" onClick={() => navigate('/events')}>

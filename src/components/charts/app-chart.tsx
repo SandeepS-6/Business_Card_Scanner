@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import ReactECharts from 'echarts-for-react'
 import type { EChartsType } from 'echarts'
 import { Download, MoreHorizontal } from 'lucide-react'
@@ -18,7 +18,15 @@ import { runChartExport } from '@/lib/charts/export'
 import type { AppChartProps } from '@/lib/charts/types'
 import { toast } from 'sonner'
 
-export function AppChart(props: AppChartProps & { bare?: boolean }) {
+export type AppChartHandle = {
+  exportPng: () => Promise<void>
+  exportExcel: () => Promise<void>
+}
+
+export const AppChart = forwardRef<AppChartHandle, AppChartProps & { bare?: boolean }>(function AppChart(
+  props,
+  ref,
+) {
   const {
     id,
     title,
@@ -60,6 +68,11 @@ export function AppChart(props: AppChartProps & { bare?: boolean }) {
     })
     setBusy(false)
   }
+
+  useImperativeHandle(ref, () => ({
+    exportPng: () => exportAction('png'),
+    exportExcel: () => exportAction('csv'),
+  }))
 
   const body = (
     <>
@@ -147,4 +160,4 @@ export function AppChart(props: AppChartProps & { bare?: boolean }) {
       <CardContent>{body}</CardContent>
     </Card>
   )
-}
+})

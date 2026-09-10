@@ -81,7 +81,7 @@ export function exportChartCsv(p: ChartExportPayload) {
   }
   const lines = [p.csvColumns.map(escape).join(','), ...p.csvRows.map((r) => r.map(escape).join(','))]
   downloadBlob(new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' }), chartFilename(p.chartId, 'csv'))
-  toast.success('CSV exported.')
+  toast.success('Excel (CSV) downloaded.')
 }
 
 export async function copyChartImage(p: ChartExportPayload) {
