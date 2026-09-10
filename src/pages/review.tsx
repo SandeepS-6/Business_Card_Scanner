@@ -12,6 +12,7 @@ import { secureStorage } from '@/security/storage'
 import type { Confidence, Contact, OcrResult } from '@/types'
 import { toast } from 'sonner'
 import { ErrorState } from '@/components/shared/empty-state'
+import { ReviewFollowUpSection } from '@/components/review/review-follow-up'
 
 type FieldKey = keyof OcrResult['fields']
 
@@ -199,6 +200,11 @@ export function ReviewPage() {
           </CardContent>
         </Card>
       </div>
+
+      <ReviewFollowUpSection
+        contactName={result.fields.fullName.value || `${result.fields.firstName.value} ${result.fields.lastName.value}`.trim()}
+        eventName="Tech Expo 2026"
+      />
 
       <Dialog open={dupOpen} onOpenChange={setDupOpen}>
         <DialogContent className="max-w-3xl">

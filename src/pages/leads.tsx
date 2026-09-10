@@ -60,10 +60,10 @@ export function LeadsPage() {
   return (
     <div>
       <PageHeader title="Leads" description="Table and kanban views for pipeline management." />
-      <Tabs defaultValue="kanban">
+      <Tabs defaultValue="table">
         <TabsList>
-          <TabsTrigger value="kanban">Kanban</TabsTrigger>
           <TabsTrigger value="table">Table</TabsTrigger>
+          <TabsTrigger value="kanban">Kanban</TabsTrigger>
         </TabsList>
         <TabsContent value="kanban">
           <DndContext sensors={sensors} onDragEnd={onDragEnd}>

@@ -18,7 +18,7 @@ import { runChartExport } from '@/lib/charts/export'
 import type { AppChartProps } from '@/lib/charts/types'
 import { toast } from 'sonner'
 
-export function AppChart(props: AppChartProps) {
+export function AppChart(props: AppChartProps & { bare?: boolean }) {
   const {
     id,
     title,
@@ -30,6 +30,7 @@ export function AppChart(props: AppChartProps) {
     onRetry,
     canExport = true,
     rows,
+    bare = false,
   } = props
   const chartRef = useRef<ReactECharts>(null)
   const [busy, setBusy] = useState(false)
@@ -59,6 +60,42 @@ export function AppChart(props: AppChartProps) {
     })
     setBusy(false)
   }
+
+  const body = (
+    <>
+      {loading ? (
+        <div className="animate-pulse rounded-md bg-muted" style={{ height }} aria-busy aria-label="Loading chart" />
+      ) : null}
+      {error ? (
+        <div className="flex flex-col items-center justify-center gap-2 text-center" style={{ height }} role="alert">
+          <p className="text-sm font-medium">Unable to load chart data.</p>
+          <p className="text-xs text-muted-foreground">{error}</p>
+          {onRetry ? (
+            <Button size="sm" variant="outline" onClick={onRetry}>
+              Retry
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+      {empty ? (
+        <div className="flex items-center justify-center text-center text-sm text-muted-foreground" style={{ height }}>
+          {emptyMessage}
+        </div>
+      ) : null}
+      {!loading && !error && !empty ? (
+        <ReactECharts
+          ref={chartRef}
+          option={built.option}
+          style={{ height, width: '100%' }}
+          opts={{ renderer: 'canvas' }}
+          notMerge
+          lazyUpdate
+        />
+      ) : null}
+    </>
+  )
+
+  if (bare) return <div>{body}</div>
 
   return (
     <Card>
@@ -107,37 +144,7 @@ export function AppChart(props: AppChartProps) {
           </DropdownMenu>
         ) : null}
       </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="animate-pulse rounded-md bg-muted" style={{ height }} aria-busy aria-label="Loading chart" />
-        ) : null}
-        {error ? (
-          <div className="flex flex-col items-center justify-center gap-2 text-center" style={{ height }} role="alert">
-            <p className="text-sm font-medium">Unable to load chart data.</p>
-            <p className="text-xs text-muted-foreground">{error}</p>
-            {onRetry ? (
-              <Button size="sm" variant="outline" onClick={onRetry}>
-                Retry
-              </Button>
-            ) : null}
-          </div>
-        ) : null}
-        {empty ? (
-          <div className="flex items-center justify-center text-center text-sm text-muted-foreground" style={{ height }}>
-            {emptyMessage}
-          </div>
-        ) : null}
-        {!loading && !error && !empty ? (
-          <ReactECharts
-            ref={chartRef}
-            option={built.option}
-            style={{ height, width: '100%' }}
-            opts={{ renderer: 'canvas' }}
-            notMerge
-            lazyUpdate
-          />
-        ) : null}
-      </CardContent>
+      <CardContent>{body}</CardContent>
     </Card>
   )
 }

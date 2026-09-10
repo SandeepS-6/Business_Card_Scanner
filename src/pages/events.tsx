@@ -16,6 +16,7 @@ import { Input, Label, Textarea } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
+import { DateField } from '@/components/shared/date-field'
 import { useApp } from '@/context/app-context'
 import { contactService, eventService, followUpService, userService } from '@/services/api'
 import { dashboardService } from '@/services/api'
@@ -91,7 +92,7 @@ export function EventsPage() {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="overflow-visible">
           <DialogHeader><DialogTitle>Create Event</DialogTitle></DialogHeader>
           <form
             className="space-y-3"
@@ -104,8 +105,24 @@ export function EventsPage() {
             <div className="space-y-1"><Label>Event name</Label><Input {...form.register('name')} /></div>
             <div className="space-y-1"><Label>Description</Label><Textarea {...form.register('description')} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1"><Label>Start date</Label><Input type="date" {...form.register('startDate')} /></div>
-              <div className="space-y-1"><Label>End date</Label><Input type="date" {...form.register('endDate')} /></div>
+              <div className="space-y-1">
+                <Label htmlFor="event-start">Start date</Label>
+                <DateField
+                  id="event-start"
+                  value={form.watch('startDate')}
+                  onChange={(v) => form.setValue('startDate', v, { shouldValidate: true })}
+                  error={form.formState.errors.startDate?.message}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="event-end">End date</Label>
+                <DateField
+                  id="event-end"
+                  value={form.watch('endDate')}
+                  onChange={(v) => form.setValue('endDate', v, { shouldValidate: true })}
+                  error={form.formState.errors.endDate?.message}
+                />
+              </div>
             </div>
             <div className="space-y-1"><Label>Location</Label><Input {...form.register('location')} /></div>
             <div className="space-y-1">

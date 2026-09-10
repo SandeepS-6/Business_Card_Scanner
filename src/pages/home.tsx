@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { CalendarPlus, ClipboardList, Contact, UserPlus } from 'lucide-react'
+import { BarChart3, CalendarPlus, ClipboardList, Contact, Download, Table2, UserPlus } from 'lucide-react'
 import { useApp } from '@/context/app-context'
 import { PageHeader } from '@/components/shared/page-header'
 import { CapturePanel } from '@/components/capture/capture-panel'
@@ -13,6 +13,8 @@ import { LeadQualityBadge, LeadStatusBadge } from '@/components/shared/status-ba
 import { contactService, dashboardService, followUpService, userService } from '@/services/api'
 import { formatDateTime } from '@/lib/utils'
 import { can } from '@/security/permissions'
+import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 /** Combined home: capture + dashboard analytics. */
 export function HomePage() {
@@ -21,6 +23,8 @@ export function HomePage() {
   const [params] = useSearchParams()
   const orgId = organization?.id ?? ''
   const canExport = can(user?.role, 'CAPTURE')
+  const [period, setPeriod] = useState<'daily' | 'monthly'>('daily')
+  const [view, setView] = useState<'chart' | 'table'>('chart')
 
   useEffect(() => {
     if (params.get('mode') === 'upload' || params.get('focus') === 'capture') {
@@ -44,6 +48,18 @@ export function HomePage() {
     enabled: !!orgId,
   })
   const charts = dashboardService.charts()
+
+  const scanRows = useMemo(() => {
+    if (period === 'daily') return charts.scansOverTime
+    // Mock monthly rollup from weekly series
+    return [
+      { day: 'Jul', scans: charts.scansOverTime.slice(0, 2).reduce((s, r) => s + Number(r.scans ?? 0), 0) },
+      { day: 'Aug', scans: charts.scansOverTime.slice(2, 5).reduce((s, r) => s + Number(r.scans ?? 0), 0) },
+      { day: 'Sep', scans: charts.scansOverTime.slice(5).reduce((s, r) => s + Number(r.scans ?? 0), 0) },
+    ]
+  }, [charts.scansOverTime, period])
+
+  const rangeLabel = period === 'daily' ? 'Jul 09 - Sep 09' : 'Jul - Sep 2026'
 
   const kpis = [
     { label: 'Cards Scanned', value: stats?.cardsScanned },
@@ -84,19 +100,6 @@ export function HomePage() {
                   </Card>
                 ))}
           </div>
-          <AppChart
-            id="cards-scanned-over-time"
-            title="Cards scanned over time"
-            description="Weekly scan volume for the current organization."
-            kind="area"
-            categoryKey="day"
-            series={[{ key: 'scans', label: 'Cards scanned' }]}
-            rows={charts.scansOverTime}
-            height={208}
-            loading={isLoading}
-            canExport={canExport}
-            emptyMessage="No scan activity for this period."
-          />
         </div>
       </div>
 
@@ -115,47 +118,110 @@ export function HomePage() {
             ))}
       </div>
 
-      <div className="mb-6 grid gap-4 lg:grid-cols-3">
-        <AppChart
-          id="leads-by-status"
-          title="Leads by status"
-          kind="bar"
-          categoryKey="status"
-          series={[{ key: 'count', label: 'Leads' }]}
-          rows={charts.leadsByStatus}
-          height={224}
-          loading={isLoading}
-          canExport={canExport}
-          emptyMessage="No lead activity for this period."
-        />
-        <AppChart
-          id="lead-quality"
-          title="Lead quality"
-          kind="doughnut"
-          categoryKey="quality"
-          series={[{ key: 'count', label: 'Leads' }]}
-          rows={charts.leadQuality}
-          height={224}
-          loading={isLoading}
-          canExport={canExport}
-          emptyMessage="No quality breakdown yet."
-        />
-        <AppChart
-          id="follow-up-activity"
-          title="Follow-up activity"
-          kind="stackedBar"
-          categoryKey="day"
-          series={[
-            { key: 'completed', label: 'Completed' },
-            { key: 'pending', label: 'Pending', color: '#94a3b8' },
-          ]}
-          rows={charts.followUpActivity}
-          height={224}
-          loading={isLoading}
-          canExport={canExport}
-          emptyMessage="No follow-up activity for this period."
-        />
-      </div>
+      <Card className="mb-6 overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+          <h2 className="min-w-0 text-sm font-medium text-foreground sm:text-base">
+            Cards scanned ({period === 'daily' ? 'daily' : 'monthly'}) ({rangeLabel})
+          </h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex h-9 items-center rounded-full border border-border bg-muted/40 p-0.5" role="group" aria-label="Period">
+              <button
+                type="button"
+                className={cn(
+                  'h-8 rounded-full px-3 text-sm transition-colors',
+                  period === 'daily' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted',
+                )}
+                aria-pressed={period === 'daily'}
+                onClick={() => setPeriod('daily')}
+              >
+                Daily
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  'h-8 rounded-full px-3 text-sm transition-colors',
+                  period === 'monthly' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted',
+                )}
+                aria-pressed={period === 'monthly'}
+                onClick={() => setPeriod('monthly')}
+              >
+                Monthly
+              </button>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                size="icon"
+                variant={view === 'chart' ? 'default' : 'outline'}
+                className="size-9"
+                aria-label="Chart view"
+                aria-pressed={view === 'chart'}
+                onClick={() => setView('chart')}
+              >
+                <BarChart3 className="size-4" />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant={view === 'table' ? 'default' : 'outline'}
+                className="size-9"
+                aria-label="Table view"
+                aria-pressed={view === 'table'}
+                onClick={() => setView('table')}
+              >
+                <Table2 className="size-4" />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                className="size-9"
+                aria-label="Download"
+                disabled={!canExport}
+                onClick={() => toast.success(canExport ? 'Export queued (mock CSV)' : 'No export permission')}
+              >
+                <Download className="size-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+        <div className="p-4">
+          {view === 'chart' ? (
+            <AppChart
+              bare
+              id="home-cards-scanned"
+              title="Cards scanned"
+              kind="bar"
+              categoryKey="day"
+              series={[{ key: 'scans', label: 'Cards scanned' }]}
+              rows={scanRows}
+              height={260}
+              loading={isLoading}
+              canExport={false}
+              emptyMessage="No scan activity for this period."
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="px-2 py-2 font-medium">{period === 'daily' ? 'Day' : 'Month'}</th>
+                    <th className="px-2 py-2 font-medium">Cards scanned</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scanRows.map((r) => (
+                    <tr key={String(r.day)} className="border-b border-border/60">
+                      <td className="px-2 py-2">{String(r.day)}</td>
+                      <td className="px-2 py-2 tabular-nums">{Number(r.scans ?? 0)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </Card>
 
       <div className="mb-6 flex flex-wrap gap-2">
         <Button variant="secondary" onClick={() => navigate('/events')}>

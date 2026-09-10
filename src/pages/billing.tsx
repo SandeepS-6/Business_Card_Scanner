@@ -75,6 +75,17 @@ export function BillingPage() {
         description="Subscription, usage, and invoices. Payment fields are placeholders — never enter real card data."
       />
 
+      <Card className="mb-6 p-5">
+        <h2 className="font-display text-lg font-semibold">Enterprise billing</h2>
+        <p className="mt-1 text-sm text-muted-foreground">UI for postpaid / usage-based contracts — not wired to payments.</p>
+        <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+          <li>Billing model: Postpaid + usage overage</li>
+          <li>Contract: NET-30 · MSA-2026-NEXUS</li>
+          <li>Billing contact: finance@nexus-events.example</li>
+          <li>Invoice terms: Electronic PDF · ACH preferred</li>
+        </ul>
+      </Card>
+
       {plan && current ? (
         <Card className="mb-6 p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -274,17 +285,6 @@ export function BillingPage() {
           </tr>
         ))}
       </DataTable>
-
-      <Card className="mt-8 p-5">
-        <h2 className="font-display text-lg font-semibold">Enterprise billing</h2>
-        <p className="mt-1 text-sm text-muted-foreground">UI for postpaid / usage-based contracts — not wired to payments.</p>
-        <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-          <li>Billing model: Postpaid + usage overage</li>
-          <li>Contract: NET-30 · MSA-2026-NEXUS</li>
-          <li>Billing contact: finance@nexus-events.example</li>
-          <li>Invoice terms: Electronic PDF · ACH preferred</li>
-        </ul>
-      </Card>
 
       <ConfirmDialog
         open={downgradeOpen}
