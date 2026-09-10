@@ -81,9 +81,17 @@ export function AuthLoginLayout({
             }}
           >
             <div className="space-y-2">
-              <Label htmlFor="login-email" className={loginType.label}>
-                Email
-              </Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="login-email" className={loginType.label}>
+                  Email
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="login-remember" checked={remember} onCheckedChange={(v) => setRemember(v === true)} />
+                  <Label htmlFor="login-remember" className={cn(loginType.body, 'cursor-pointer')}>
+                    Remember me
+                  </Label>
+                </div>
+              </div>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
                 <Input
@@ -134,13 +142,6 @@ export function AuthLoginLayout({
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Checkbox id="login-remember" checked={remember} onCheckedChange={(v) => setRemember(v === true)} />
-              <Label htmlFor="login-remember" className={cn(loginType.body, 'cursor-pointer')}>
-                Remember me
-              </Label>
             </div>
 
             {error ? (
