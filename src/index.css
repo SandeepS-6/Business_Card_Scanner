@@ -140,22 +140,24 @@ h1, h2, h3, .font-display {
   background: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
 }
 
-/* Login left-panel activity feed: bottom → top seamless loop */
-@keyframes login-feed-up {
+/* Login left-panel: stack enter from bottom (not marquee scroll) */
+@keyframes login-stack-enter {
   from {
-    transform: translate3d(0, 0, 0);
+    opacity: 0;
+    transform: translate3d(0, 1.25rem, 0);
   }
   to {
-    transform: translate3d(0, -50%, 0);
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
 }
 
-.login-feed-marquee {
-  animation: login-feed-up 48s linear infinite;
+.login-stack-enter {
+  animation: login-stack-enter 0.45s ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .login-feed-marquee {
+  .login-stack-enter {
     animation: none;
   }
 }

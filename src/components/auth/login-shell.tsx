@@ -90,16 +90,40 @@ function FeedCard({ item }: { item: FeedItem }) {
   return <ProgressCard pct={item.pct} />
 }
 
-/** Seamless bottom→top loop: duplicate list, animate -50%. */
-function ActivityFeedLoop() {
-  const loop = [...FEED, ...FEED]
+const STACK_SIZE = 3
+const STACK_INTERVAL_MS = 2400
+
+/**
+ * Notification stack (not a marquee): new card enters at the bottom,
+ * older cards shift up; top card leaves. Cycles through 20+ items.
+ */
+function ActivityFeedStack() {
+  const [stack, setStack] = useState(() =>
+    FEED.slice(0, STACK_SIZE).map((item, i) => ({ ...item, key: `${item.id}-init-${i}` })),
+  )
+
+  useEffect(() => {
+    let nextIndex = STACK_SIZE
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduced) return
+
+    const timer = window.setInterval(() => {
+      const item = FEED[nextIndex % FEED.length]
+      const key = `${item.id}-${nextIndex}`
+      nextIndex += 1
+      setStack((prev) => [...prev, { ...item, key }].slice(-STACK_SIZE))
+    }, STACK_INTERVAL_MS)
+
+    return () => window.clearInterval(timer)
+  }, [])
+
   return (
-    <div className="relative mt-8 h-[320px] overflow-hidden xl:h-[380px]" aria-hidden>
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-16 bg-gradient-to-b from-[color-mix(in_oklab,var(--background)_88%,transparent)] to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-16 bg-gradient-to-t from-[color-mix(in_oklab,var(--background)_88%,transparent)] to-transparent" />
-      <div className="login-feed-marquee flex flex-col gap-3 will-change-transform">
-        {loop.map((item, i) => (
-          <FeedCard key={`${item.id}-${i}`} item={item} />
+    <div className="relative mt-8 h-[280px] xl:h-[300px]" aria-hidden>
+      <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end gap-3">
+        {stack.map((item) => (
+          <div key={item.key} className="login-stack-enter">
+            <FeedCard item={item} />
+          </div>
         ))}
       </div>
     </div>
@@ -160,7 +184,7 @@ export function LoginShowcase({ slides = DEFAULT_SLIDES }: { slides?: ShowcaseSl
             {slide.title}
           </h2>
           <p className="mt-4 max-w-md font-sans text-[15px] font-normal leading-relaxed text-muted-foreground">{slide.body}</p>
-          {slide.visual ?? <ActivityFeedLoop />}
+          {slide.visual ?? <ActivityFeedStack />}
         </div>
 
         <div className="mt-6 flex items-center justify-between gap-4">
