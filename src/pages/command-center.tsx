@@ -211,7 +211,7 @@ export function CommandCenterPage() {
           rows={[
             { status: 'New', count: 40 },
             { status: 'Qualified', count: 74 },
-            { status: 'Hot', count: 28 },
+            { status: 'Interested', count: 28 },
             { status: 'Lost', count: 12 },
           ]}
           canExport={canExport}

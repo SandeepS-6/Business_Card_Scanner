@@ -143,7 +143,7 @@ export function Sidebar() {
           <span className="font-display text-sm font-semibold">BCS</span>
         )}
       </div>
-      <nav className="flex-1 overflow-y-auto p-2" aria-label="Main">
+      <nav className="flex-1 overflow-y-auto scrollbar-none p-2" aria-label="Main">
         <NavSection title="Main" items={mainNav} collapsed={sidebarCollapsed} role={user.role} />
         <NavSection title="Communications" items={commNav} collapsed={sidebarCollapsed} role={user.role} />
         {user.role !== 'user' ? <NavSection title="CRM" items={crmNav} collapsed={sidebarCollapsed} role={user.role} /> : null}

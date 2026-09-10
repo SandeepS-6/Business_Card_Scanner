@@ -9,7 +9,7 @@ import { AppChart, type AppChartHandle } from '@/components/charts/app-chart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { CardSkeleton } from '@/components/ui/skeleton'
-import { LeadQualityBadge, LeadStatusBadge } from '@/components/shared/status-badges'
+import { LeadIntentBadge, LeadStatusBadge } from '@/components/shared/status-badges'
 import { contactService, dashboardService, followUpService, userService } from '@/services/api'
 import { formatDateTime } from '@/lib/utils'
 import { can } from '@/security/permissions'
@@ -68,7 +68,7 @@ export function HomePage() {
     { label: 'Leads', value: stats?.leads },
     { label: 'Qualified Leads', value: stats?.qualifiedLeads },
     { label: 'Follow-ups Pending', value: stats?.followUpsPending },
-    { label: 'Hot Leads', value: stats?.hotLeads },
+    { label: 'High Intent Leads', value: stats?.highIntentLeads },
     { label: 'OCR Success Rate', value: stats ? `${stats.ocrSuccessRate}%` : undefined },
     { label: 'Duplicate Rate', value: stats ? `${stats.duplicateRate}%` : undefined },
   ]
@@ -297,7 +297,7 @@ export function HomePage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <LeadStatusBadge status={c.leadStatus} />
-                  <LeadQualityBadge quality={c.leadQuality} />
+                  <LeadIntentBadge intent={c.leadIntent} />
                 </div>
               </Link>
             ))}

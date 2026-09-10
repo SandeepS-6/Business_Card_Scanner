@@ -1,6 +1,7 @@
 export type Role = 'super_admin' | 'org_admin' | 'user'
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'interested' | 'converted' | 'lost'
-export type LeadQuality = 'hot' | 'warm' | 'cold'
+/** High / Medium / Low — buying interest & follow-up priority (not a quality score). */
+export type LeadIntent = 'high' | 'medium' | 'low'
 export type EventStatus = 'upcoming' | 'active' | 'completed' | 'archived'
 export type FollowUpChannel = 'email' | 'whatsapp' | 'phone' | 'meeting' | 'other'
 export type FollowUpStatus = 'pending' | 'in_progress' | 'completed' | 'overdue' | 'cancelled'
@@ -116,7 +117,7 @@ export interface Contact {
   notes?: string
   eventId?: string
   leadStatus: LeadStatus
-  leadQuality: LeadQuality
+  leadIntent: LeadIntent
   ownerId: string
   tags: string[]
   source: string
@@ -133,7 +134,7 @@ export interface Lead {
   eventId?: string
   ownerId: string
   status: LeadStatus
-  quality: LeadQuality
+  intent: LeadIntent
   lastActivity: string
   nextFollowUp?: string
 }
@@ -313,7 +314,7 @@ export interface DashboardStats {
   leads: number
   qualifiedLeads: number
   followUpsPending: number
-  hotLeads: number
+  highIntentLeads: number
   ocrSuccessRate: number
   duplicateRate: number
 }

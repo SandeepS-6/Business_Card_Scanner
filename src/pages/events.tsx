@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/shared/page-header'
 import { DataTable } from '@/components/shared/data-table'
 import { SearchField } from '@/components/shared/search-field'
 import { EmptyState } from '@/components/shared/empty-state'
-import { EventStatusBadge, LeadQualityBadge, LeadStatusBadge } from '@/components/shared/status-badges'
+import { EventStatusBadge, LeadIntentBadge, LeadStatusBadge } from '@/components/shared/status-badges'
 import { AppChart } from '@/components/charts/app-chart'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -195,7 +195,7 @@ export function EventDetailPage() {
     { label: 'Duplicates', value: Math.round(event.cardsScanned * 0.06) },
     { label: 'Unique contacts', value: event.contactsCount },
     { label: 'Qualified leads', value: Math.round(event.leadsCount * 0.37) },
-    { label: 'Hot leads', value: Math.round(event.leadsCount * 0.14) },
+    { label: 'High Intent leads', value: Math.round(event.leadsCount * 0.14) },
     { label: 'Follow-ups pending', value: followUps.filter((f) => f.eventId === event.id && f.status === 'pending').length },
   ]
 
@@ -220,13 +220,13 @@ export function EventDetailPage() {
           ))}
         </TabsContent>
         <TabsContent value="contacts">
-          <DataTable columns={['Name', 'Company', 'Status', 'Quality']}>
+          <DataTable columns={['Name', 'Company', 'Status', 'Intent']}>
             {eventContacts.map((c) => (
               <tr key={c.id}>
                 <td className="px-4 py-3"><Link className="text-primary hover:underline" to={`/contacts/${c.id}`}>{c.fullName}</Link></td>
                 <td className="px-4 py-3">{c.company}</td>
                 <td className="px-4 py-3"><LeadStatusBadge status={c.leadStatus} /></td>
-                <td className="px-4 py-3"><LeadQualityBadge quality={c.leadQuality} /></td>
+                <td className="px-4 py-3"><LeadIntentBadge intent={c.leadIntent} /></td>
               </tr>
             ))}
           </DataTable>
@@ -257,15 +257,15 @@ export function EventDetailPage() {
             emptyMessage="No scan activity for this event period."
           />
           <AppChart
-            id={`event-${event.id}-leads-by-quality`}
-            title="Leads by quality"
+            id={`event-${event.id}-leads-by-intent`}
+            title="Leads by intent"
             kind="bar"
-            categoryKey="quality"
+            categoryKey="intent"
             series={[{ key: 'count', label: 'Leads' }]}
-            rows={charts.leadQuality}
+            rows={charts.leadIntent}
             height={224}
             canExport={canExport}
-            emptyMessage="No quality data for this event."
+            emptyMessage="No intent data for this event."
           />
         </TabsContent>
         <TabsContent value="settings" className="space-y-4">

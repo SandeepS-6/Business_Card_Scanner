@@ -86,7 +86,7 @@ export function ReviewPage() {
       notes: f.notes.value || undefined,
       eventId: selectedEventId ?? undefined,
       leadStatus: createLead ? 'new' : 'new',
-      leadQuality: 'warm',
+      leadIntent: 'medium',
       ownerId: user!.id,
       tags: [],
       source: 'Business card scan',

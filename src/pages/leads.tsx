@@ -14,7 +14,7 @@ import { PageHeader } from '@/components/shared/page-header'
 import { DataTable } from '@/components/shared/data-table'
 import { SearchField } from '@/components/shared/search-field'
 import { EmptyState } from '@/components/shared/empty-state'
-import { LeadQualityBadge, LeadStatusBadge } from '@/components/shared/status-badges'
+import { LeadIntentBadge, LeadStatusBadge } from '@/components/shared/status-badges'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useApp } from '@/context/app-context'
 import { contactService, leadService, userService } from '@/services/api'
@@ -38,7 +38,7 @@ export function LeadsPage() {
     if (!query) return rows
     return rows.filter((l) => {
       const c = contacts.find((x) => x.id === l.contactId)
-      return `${c?.fullName ?? ''} ${c?.company ?? ''} ${l.status} ${l.quality}`.toLowerCase().includes(query)
+      return `${c?.fullName ?? ''} ${c?.company ?? ''} ${l.status} ${l.intent}`.toLowerCase().includes(query)
     })
   }, [rows, q, contacts])
 
@@ -89,7 +89,7 @@ export function LeadsPage() {
           </DndContext>
         </TabsContent>
         <TabsContent value="table">
-          <DataTable columns={['Contact', 'Company', 'Event', 'Owner', 'Status', 'Quality', 'Last activity', 'Next follow-up']}>
+          <DataTable columns={['Contact', 'Company', 'Event', 'Owner', 'Status', 'Intent', 'Last activity', 'Next follow-up']}>
             {visibleRows.map((l) => {
               const c = contacts.find((x) => x.id === l.contactId)
               const owner = userService.get(l.ownerId)
@@ -104,7 +104,7 @@ export function LeadsPage() {
                   <td className="px-4 py-3">{l.eventId ?? '—'}</td>
                   <td className="px-4 py-3">{owner ? `${owner.firstName} ${owner.lastName}` : '—'}</td>
                   <td className="px-4 py-3"><LeadStatusBadge status={l.status} /></td>
-                  <td className="px-4 py-3"><LeadQualityBadge quality={l.quality} /></td>
+                  <td className="px-4 py-3"><LeadIntentBadge intent={l.intent} /></td>
                   <td className="px-4 py-3">{formatDate(l.lastActivity)}</td>
                   <td className="px-4 py-3">{l.nextFollowUp ? formatDate(l.nextFollowUp) : '—'}</td>
                 </tr>
@@ -160,7 +160,7 @@ function KanbanCard({ lead, title, company }: { lead: Lead; title: string; compa
       <p className="text-sm font-medium">{title}</p>
       <p className="text-xs text-muted-foreground">{company}</p>
       <div className="mt-2">
-        <LeadQualityBadge quality={lead.quality} />
+        <LeadIntentBadge intent={lead.intent} />
       </div>
       <Link to={`/contacts/${lead.contactId}`} className="mt-1 inline-block text-xs text-primary hover:underline">
         Open

@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge'
-import type { Confidence, EventStatus, FollowUpStatus, HealthStatus, LeadQuality, LeadStatus, QueueStatus, SyncStatus } from '@/types'
+import type { Confidence, EventStatus, FollowUpStatus, HealthStatus, LeadIntent, LeadStatus, QueueStatus, SyncStatus } from '@/types'
 
 const leadStatusVariant: Record<LeadStatus, 'muted' | 'secondary' | 'success' | 'warning' | 'default' | 'danger'> = {
   new: 'muted',
@@ -10,13 +10,19 @@ const leadStatusVariant: Record<LeadStatus, 'muted' | 'secondary' | 'success' | 
   lost: 'danger',
 }
 
+const leadIntentLabel: Record<LeadIntent, string> = {
+  high: 'High Intent',
+  medium: 'Medium Intent',
+  low: 'Low Intent',
+}
+
 export function LeadStatusBadge({ status }: { status: LeadStatus }) {
   return <Badge variant={leadStatusVariant[status]}>{status.replace('_', ' ')}</Badge>
 }
 
-export function LeadQualityBadge({ quality }: { quality: LeadQuality }) {
-  const variant = quality === 'hot' ? 'danger' : quality === 'warm' ? 'warning' : 'muted'
-  return <Badge variant={variant}>{quality}</Badge>
+export function LeadIntentBadge({ intent }: { intent: LeadIntent }) {
+  const variant = intent === 'high' ? 'success' : intent === 'medium' ? 'warning' : 'muted'
+  return <Badge variant={variant}>{leadIntentLabel[intent]}</Badge>
 }
 
 export function EventStatusBadge({ status }: { status: EventStatus }) {
@@ -27,7 +33,8 @@ export function EventStatusBadge({ status }: { status: EventStatus }) {
 export function FollowUpStatusBadge({ status }: { status: FollowUpStatus }) {
   const variant =
     status === 'overdue' ? 'danger' : status === 'completed' ? 'success' : status === 'cancelled' ? 'muted' : status === 'in_progress' ? 'warning' : 'secondary'
-  return <Badge variant={variant}>{status.replace('_', ' ')}</Badge>
+  const label = status === 'pending' ? 'Scheduled' : status.replace('_', ' ')
+  return <Badge variant={variant}>{label}</Badge>
 }
 
 export function ConfidenceBadge({ confidence }: { confidence: Confidence }) {

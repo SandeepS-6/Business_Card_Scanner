@@ -78,10 +78,10 @@ export let automations: AutomationRule[] = [
   {
     id: 'auto3',
     orgId: 'org-nexus',
-    name: 'Hot lead CRM push',
+    name: 'High intent lead CRM push',
     status: 'draft',
     trigger: 'Lead status changed',
-    conditions: [{ field: 'Lead quality', op: 'equals', value: 'Hot' }],
+    conditions: [{ field: 'Lead intent', op: 'equals', value: 'High Intent' }],
     conditionLogic: 'and',
     actions: [{ type: 'Change lead status', config: 'Qualified' }],
     runs: 0,
