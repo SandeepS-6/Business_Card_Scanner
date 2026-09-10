@@ -31,8 +31,8 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "DM Sans", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter", "DM Sans", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {

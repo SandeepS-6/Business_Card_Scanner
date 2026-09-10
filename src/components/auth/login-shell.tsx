@@ -51,7 +51,7 @@ function ScanCard({ name, meta }: { name: string; meta: string }) {
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate font-sans text-[15px] font-semibold leading-snug tracking-tight text-foreground">{name}</p>
-        <p className="mt-0.5 truncate font-sans text-[13px] font-normal leading-snug text-muted-foreground">{meta}</p>
+        <p className="mt-0.5 truncate font-sans text-[13px] font-normal leading-snug tracking-normal text-slate-500 dark:text-slate-400">{meta}</p>
       </div>
       <span className="shrink-0 rounded-full bg-sky-500/10 px-2.5 py-1 font-sans text-xs font-semibold text-sky-700 dark:text-sky-300">
         Scanned
@@ -79,7 +79,7 @@ function ProgressCard({ pct }: { pct: number }) {
       <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
         <div className="h-full rounded-full bg-teal-500 transition-all" style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
       </div>
-      <p className="shrink-0 font-sans text-[13px] font-normal tabular-nums text-muted-foreground">{pct}% of leads followed up</p>
+      <p className="shrink-0 font-sans text-[13px] font-normal tabular-nums tracking-normal text-slate-500 dark:text-slate-400">{pct}% of leads followed up</p>
     </div>
   )
 }
@@ -183,7 +183,9 @@ export function LoginShowcase({ slides = DEFAULT_SLIDES }: { slides?: ShowcaseSl
           <h2 className="font-sans text-[2.5rem] font-semibold leading-[1.12] tracking-[-0.03em] whitespace-pre-line text-foreground xl:text-[3.25rem]">
             {slide.title}
           </h2>
-          <p className="mt-4 max-w-md font-sans text-[15px] font-normal leading-relaxed text-muted-foreground">{slide.body}</p>
+          <p className="mt-4 max-w-md font-sans text-[15px] font-normal leading-6 tracking-normal text-slate-500 dark:text-slate-400">
+            {slide.body}
+          </p>
           {slide.visual ?? <ActivityFeedStack />}
         </div>
 
@@ -207,7 +209,7 @@ export function LoginShowcase({ slides = DEFAULT_SLIDES }: { slides?: ShowcaseSl
           ) : (
             <span />
           )}
-          <p className="font-sans text-xs font-normal text-muted-foreground">Demo UI · mock authentication</p>
+          <p className="font-sans text-xs font-normal tracking-normal text-slate-500 dark:text-slate-400">Demo UI · mock authentication</p>
         </div>
       </div>
     </div>
