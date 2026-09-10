@@ -43,17 +43,20 @@ const FEED_SEED: Omit<FeedItem, 'id'>[] = [
 
 const FEED: FeedItem[] = FEED_SEED.map((item, i) => ({ ...item, id: `feed-${i}` }))
 
+const cardShell =
+  'flex items-center gap-3 rounded-[1.25rem] border border-black/[0.04] bg-white px-4 py-3.5 shadow-[0_10px_28px_-12px_rgba(15,23,42,0.28)] dark:border-white/10 dark:bg-card'
+
 function ScanCard({ name, meta }: { name: string; meta: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card px-4 py-3.5 shadow-sm">
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 text-sky-700 dark:text-sky-300">
+    <div className={cardShell}>
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-sky-700 dark:text-sky-300">
         <ScanLine className="size-4" strokeWidth={2} aria-hidden />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-sans text-[15px] font-semibold leading-snug tracking-tight text-foreground">{name}</p>
+        <p className="truncate font-sans text-[15px] font-bold leading-snug tracking-tight text-slate-900 dark:text-foreground">{name}</p>
         <p className="mt-0.5 truncate font-sans text-[13px] font-normal leading-snug tracking-normal text-slate-500 dark:text-slate-400">{meta}</p>
       </div>
-      <span className="shrink-0 rounded-full bg-sky-500/10 px-2.5 py-1 font-sans text-xs font-semibold text-sky-700 dark:text-sky-300">
+      <span className="ml-auto shrink-0 rounded-full bg-sky-500/15 px-2.5 py-1 font-sans text-xs font-medium text-sky-700 dark:text-sky-300">
         Scanned
       </span>
     </div>
@@ -62,11 +65,11 @@ function ScanCard({ name, meta }: { name: string; meta: string }) {
 
 function AddedCard({ event }: { event: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card px-4 py-3.5 shadow-sm">
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-emerald-500/70 text-emerald-600 dark:text-emerald-400">
+    <div className={cardShell}>
+      <div className="flex size-7 shrink-0 items-center justify-center rounded-full border-[1.5px] border-emerald-500 text-emerald-600 dark:text-emerald-400">
         <Check className="size-3.5" strokeWidth={2.5} aria-hidden />
       </div>
-      <p className="min-w-0 font-sans text-[14px] font-medium leading-snug text-foreground/90">
+      <p className="min-w-0 font-sans text-[14px] font-normal leading-snug text-slate-600 dark:text-slate-300">
         Added to &quot;{event}&quot; leads
       </p>
     </div>
@@ -75,11 +78,13 @@ function AddedCard({ event }: { event: string }) {
 
 function ProgressCard({ pct }: { pct: number }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card px-4 py-3.5 shadow-sm">
-      <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
+    <div className={cardShell}>
+      <div className="h-2 w-28 shrink-0 overflow-hidden rounded-full bg-slate-100 dark:bg-muted">
         <div className="h-full rounded-full bg-teal-500 transition-all" style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
       </div>
-      <p className="shrink-0 font-sans text-[13px] font-normal tabular-nums tracking-normal text-slate-500 dark:text-slate-400">{pct}% of leads followed up</p>
+      <p className="min-w-0 font-sans text-[13px] font-normal tabular-nums tracking-normal text-slate-500 dark:text-slate-400">
+        {pct}% of leads followed up
+      </p>
     </div>
   )
 }
@@ -117,11 +122,14 @@ function ActivityFeedStack() {
     return () => window.clearInterval(timer)
   }, [])
 
+  // Staircase: top flush left / widest; each lower card steps further right (matches reference).
+  const step = ['ml-0 w-full', 'ml-6 w-[94%]', 'ml-12 w-[88%]'] as const
+
   return (
     <div className="relative mt-8 h-[280px] xl:h-[300px]" aria-hidden>
       <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end gap-3">
-        {stack.map((item) => (
-          <div key={item.key} className="login-stack-enter">
+        {stack.map((item, i) => (
+          <div key={item.key} className={cn('login-stack-enter', step[i] ?? step[2])}>
             <FeedCard item={item} />
           </div>
         ))}
@@ -138,7 +146,7 @@ type ShowcaseSlide = {
   visual?: ReactNode
 }
 
-/** Left-panel slides — add more when product content is provided. */
+/** Showcase-panel slides — add more when product content is provided. */
 const DEFAULT_SLIDES: ShowcaseSlide[] = [
   {
     id: 'capture',

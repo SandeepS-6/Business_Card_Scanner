@@ -56,9 +56,8 @@ export function AuthLoginLayout({
 
   return (
     <div className="grid min-h-screen bg-background font-sans antialiased lg:grid-cols-2">
-      <LoginShowcase />
-
-      <div className="flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-16 xl:px-24">
+      {/* Email form left; showcase + activity stack on the right of the email */}
+      <div className="flex flex-col justify-center px-6 py-10 sm:px-10 lg:order-1 lg:px-16 xl:px-24">
         <div className="mb-8 lg:hidden">
           <CardSyncMark />
         </div>
@@ -184,6 +183,8 @@ export function AuthLoginLayout({
           {demoSlot}
         </div>
       </div>
+
+      <LoginShowcase />
 
       <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
         <DialogContent>
