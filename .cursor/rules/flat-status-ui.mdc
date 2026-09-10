@@ -1,0 +1,52 @@
+---
+description: Flat status indicators and typography weight hierarchy for frontend and CMS
+alwaysApply: true
+---
+
+# Flat status UI + font weight (frontend + CMS)
+
+## Status indicators — no glossy orbs
+
+Never use glossy, 3D, bubble, or skeuomorphic status dots anywhere in `frontend/` or `cms/`.
+
+### Forbidden
+
+- Glossy / gradient / shadowed circular status orbs
+- Emoji status chrome: 🟢 🟡 🔴 🔵 ⚫ ⚪
+- Radial gradients, inset highlights, or drop-shadows on tiny status circles
+
+### Required
+
+- Flat solid `StatusDot` (`frontend/src/components/shared/status-badges.tsx`) — solid `bg-*` only
+- Or semantic `Badge` variants
+- Always pair color with a text label (e.g. “Online”)
+
+## Typography — use font weight, not only size
+
+Do not build hierarchy with `text-*` sizes alone. Status labels, titles, and emphasis must use font weight.
+
+### Scale (Tailwind)
+
+| Role | Size | Weight |
+|------|------|--------|
+| Page title | `text-2xl` + `font-display` | `font-semibold` |
+| Section / card title | `text-base` + `font-display` | `font-semibold` |
+| Row / item title | `text-sm` | `font-medium` |
+| Status label (Online, Synced, Failed) | `text-sm` | `font-medium` |
+| Body / description | `text-sm` | default (normal) |
+| Meta / timestamp | `text-xs` | default + `text-muted-foreground` |
+
+```tsx
+// ❌ BAD — size only, no weight; glossy emoji
+<span className="text-sm">🟢 Online</span>
+
+// ✅ GOOD — flat dot + size + weight
+<span className="inline-flex items-center gap-2 text-sm font-medium">
+  <StatusDot tone="success" />
+  Online
+</span>
+```
+
+## Scope
+
+Presence, sync, health, notifications, dashboards, CMS badges, and all new UI in both apps.

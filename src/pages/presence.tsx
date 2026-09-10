@@ -13,14 +13,20 @@ import {
 import { useApp } from '@/context/app-context'
 import { presenceService } from '@/services/features-api'
 import { formatDateTime } from '@/lib/utils'
+import { StatusDot } from '@/components/shared/status-badges'
 import type { PresenceStatus, TeamPresence } from '@/types/features'
 
 const FILTERS: Array<PresenceStatus | 'all'> = ['all', 'online', 'idle', 'offline']
 
-function statusLabel(s: PresenceStatus) {
-  if (s === 'online') return '🟢 Online'
-  if (s === 'idle') return '🟡 Idle'
-  return '⚫ Offline'
+function PresenceStatusLabel({ status }: { status: PresenceStatus }) {
+  const tone = status === 'online' ? 'success' : status === 'idle' ? 'warning' : 'muted'
+  const label = status === 'online' ? 'Online' : status === 'idle' ? 'Idle' : 'Offline'
+  return (
+    <span className="inline-flex items-center gap-2 text-sm font-medium">
+      <StatusDot tone={tone} />
+      {label}
+    </span>
+  )
 }
 
 export function PresencePage() {
@@ -71,7 +77,7 @@ export function PresencePage() {
                 <p className="text-xs text-muted-foreground">{p.role}</p>
               </div>
             </div>
-            <p className="text-sm">{statusLabel(p.status)}</p>
+            <PresenceStatusLabel status={p.status} />
             <p className="mt-1 text-sm text-muted-foreground">{p.activity}</p>
           </button>
         ))}
@@ -85,7 +91,7 @@ export function PresencePage() {
           </DialogHeader>
           {detail ? (
             <div className="space-y-2 text-sm">
-              <p>{statusLabel(detail.status)}</p>
+              <PresenceStatusLabel status={detail.status} />
               <p>Current event: {detail.eventId ?? 'None'}</p>
               <p>Activity: {detail.activity}</p>
               <p>Cards scanned: {detail.cardsScanned}</p>

@@ -16,6 +16,7 @@ import {
 import { useApp } from '@/context/app-context'
 import { can } from '@/security/permissions'
 import { commandCenterService, presenceService } from '@/services/features-api'
+import { StatusDot } from '@/components/shared/status-badges'
 import { formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -136,16 +137,20 @@ export function CommandCenterPage() {
           <ul className="space-y-2">
             {team.map((p) => (
               <li key={p.userId} className="flex items-center justify-between gap-2 text-sm">
-                <div>
-                  <p className="font-medium">
-                    <span aria-hidden>{p.status === 'online' ? '🟢' : p.status === 'idle' ? '🟡' : '⚫'}</span>{' '}
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 font-medium">
+                    <StatusDot
+                      tone={p.status === 'online' ? 'success' : p.status === 'idle' ? 'warning' : 'muted'}
+                    />
                     {p.name}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {p.cardsScanned} cards · {p.leadsGenerated} leads · {p.activity}
                   </p>
                 </div>
-                <Badge variant="secondary">{p.status}</Badge>
+                <Badge variant="secondary" className="capitalize">
+                  {p.status}
+                </Badge>
               </li>
             ))}
           </ul>

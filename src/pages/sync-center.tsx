@@ -15,12 +15,12 @@ import type { SyncConflict, SyncRecord } from '@/types/features'
 import { toast } from 'sonner'
 
 function syncTone(status: SyncRecord['status']) {
-  if (status === 'synced') return { label: '🟢 Synced', variant: 'success' as const }
-  if (status === 'pending') return { label: '🟡 Syncing', variant: 'warning' as const }
-  if (status === 'processing') return { label: '🔵 Processing', variant: 'secondary' as const }
-  if (status === 'failed') return { label: '🔴 Failed', variant: 'danger' as const }
-  if (status === 'offline') return { label: '⚪ Offline', variant: 'muted' as const }
-  return { label: '🟡 Retrying', variant: 'warning' as const }
+  if (status === 'synced') return { label: 'Synced', variant: 'success' as const }
+  if (status === 'pending') return { label: 'Syncing', variant: 'warning' as const }
+  if (status === 'processing') return { label: 'Processing', variant: 'secondary' as const }
+  if (status === 'failed') return { label: 'Failed', variant: 'danger' as const }
+  if (status === 'offline') return { label: 'Offline', variant: 'muted' as const }
+  return { label: 'Retrying', variant: 'warning' as const }
 }
 
 export function SyncCenterPage() {

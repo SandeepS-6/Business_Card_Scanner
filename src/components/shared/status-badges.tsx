@@ -62,6 +62,14 @@ export function HealthStatusBadge({ status }: { status: HealthStatus }) {
 }
 
 export function StatusDot({ tone }: { tone: 'success' | 'warning' | 'danger' | 'muted' }) {
-  const color = tone === 'success' ? 'bg-emerald-500' : tone === 'warning' ? 'bg-amber-500' : tone === 'danger' ? 'bg-red-500' : 'bg-slate-400'
-  return <span className={`inline-block size-2 rounded-full ${color}`} aria-hidden />
+  // Flat solid fill only — never gradients, shadows, or glossy orbs (see .cursor/rules/flat-status-ui.mdc).
+  const color =
+    tone === 'success'
+      ? 'bg-emerald-500'
+      : tone === 'warning'
+        ? 'bg-amber-500'
+        : tone === 'danger'
+          ? 'bg-red-500'
+          : 'bg-slate-400'
+  return <span className={`inline-block size-2 shrink-0 rounded-full ${color}`} aria-hidden />
 }
