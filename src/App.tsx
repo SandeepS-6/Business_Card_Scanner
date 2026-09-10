@@ -1,10 +1,11 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 import { AppShell } from '@/components/layout/app-shell'
 import { RequireAuth, RequirePermission } from '@/components/security/protected-route'
 import { UnauthorizedPage } from '@/components/security/unauthorized-page'
 import { SecurityErrorBoundary } from '@/components/security/security-error-boundary'
 import { SessionExpiredDialog } from '@/components/security/session-expired-dialog'
 import { LoginPage } from '@/pages/login'
+import { NotFoundPage } from '@/pages/not-found'
 import { HomePage } from '@/pages/home'
 import { CapturePage } from '@/pages/capture'
 import { ReviewPage } from '@/pages/review'
@@ -133,9 +134,10 @@ export function AppRouter() {
               <Route path="platform/health" element={<SystemHealthPage />} />
               <Route path="platform/audit" element={<AuditLogsPage platform />} />
             </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </SecurityErrorBoundary>
   )

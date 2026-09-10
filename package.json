@@ -43,6 +43,7 @@
     "echarts-for-react": "^3.0.6",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.43.0",
+    "motion": "^13.2.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.87.0",
