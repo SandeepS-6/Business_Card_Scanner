@@ -21,27 +21,27 @@ const MOCK_TEMPLATES: Template[] = [
     id: 'em-post',
     channel: 'email',
     name: 'Post Event Follow-up',
-    subject: 'Great meeting you at {{event.name}}',
-    body: 'Hi {{contact.name}},\n\nIt was great meeting you at {{event.name}}. I\'d love to continue our conversation about partnership opportunities.\n\nBest regards',
+    subject: 'Great meeting you at {{event_name}}',
+    body: 'Hi {{first_name}},\n\nIt was great meeting you at {{event_name}}. I\'d love to continue our conversation about partnership opportunities.\n\nBest regards,\n{{lead_owner}}',
   },
   {
     id: 'em-thanks',
     channel: 'email',
     name: 'Thank you note',
-    subject: 'Thanks for connecting, {{contact.name}}',
-    body: 'Hi {{contact.name}},\n\nThanks for stopping by our booth. Looking forward to staying in touch.\n\nCheers',
+    subject: 'Thanks for connecting, {{first_name}}',
+    body: 'Hi {{first_name}},\n\nThanks for stopping by our booth at {{event_name}}. Looking forward to staying in touch with {{company}}.\n\nCheers',
   },
   {
     id: 'wa-post',
     channel: 'whatsapp',
     name: 'Post Event WhatsApp Follow-up',
-    body: 'Hi {{contact.name}}, great meeting you at {{event.name}}. I\'d love to continue our conversation.',
+    body: 'Hi {{first_name}}, great meeting you at {{event_name}}. I\'d love to continue our conversation.',
   },
   {
     id: 'wa-quick',
     channel: 'whatsapp',
     name: 'Quick check-in',
-    body: 'Hi {{contact.name}} — following up from {{event.name}}. Free for a quick chat this week?',
+    body: 'Hi {{first_name}} — following up from {{event_name}}. Free for a quick chat this week?',
   },
 ]
 
@@ -89,10 +89,16 @@ export function ReviewFollowUpSection({ contactName = 'Contact', eventName = 'Te
     [channel],
   )
 
-  const fillVars = (text: string) =>
-    text
+  const fillVars = (text: string) => {
+    const first = contactName.trim().split(/\s+/)[0] || contactName
+    return text
+      .replaceAll('{{first_name}}', first)
       .replaceAll('{{contact.name}}', contactName)
+      .replaceAll('{{event_name}}', eventName)
       .replaceAll('{{event.name}}', eventName)
+      .replaceAll('{{company}}', 'Brightwave Labs')
+      .replaceAll('{{lead_owner}}', 'Maya Patel')
+  }
 
   const applyTemplate = (id: string) => {
     setTemplateId(id)
@@ -213,7 +219,9 @@ export function ReviewFollowUpSection({ contactName = 'Contact', eventName = 'Te
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">Templates are managed in CMS → Email / WhatsApp Templates.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Manage content in CMS → Communications → {channel === 'email' ? 'Email Templates' : 'WhatsApp Templates'}.
+                  </p>
                 </div>
 
                 {channel === 'email' && templateId ? (
@@ -271,7 +279,7 @@ export function ReviewFollowUpSection({ contactName = 'Contact', eventName = 'Te
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">Presets are managed in CMS → Meeting Presets.</p>
+                  <p className="text-xs text-muted-foreground">Manage presets in CMS → Communications → Meeting Presets.</p>
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="fu-mtitle">Meeting title</Label>
