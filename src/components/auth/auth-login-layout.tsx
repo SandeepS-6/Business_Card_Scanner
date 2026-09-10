@@ -38,6 +38,30 @@ const loginType = {
   buttonMuted: 'h-11 font-sans text-sm font-medium text-slate-600 dark:text-slate-300',
 }
 
+/** Multi-color Google G — reference mark for the SSO button (mock IdP). */
+function SsoColorLogo({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden>
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53Z"
+      />
+    </svg>
+  )
+}
+
 export function AuthLoginLayout({
   onSubmit,
   submitting,
@@ -56,8 +80,9 @@ export function AuthLoginLayout({
 
   return (
     <div className="grid min-h-screen bg-background font-sans antialiased lg:grid-cols-2">
-      {/* Email form left; showcase + activity stack on the right of the email */}
-      <div className="flex flex-col justify-center px-6 py-10 sm:px-10 lg:order-1 lg:px-16 xl:px-24">
+      <LoginShowcase />
+
+      <div className="flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-16 xl:px-24">
         <div className="mb-8 lg:hidden">
           <CardSyncMark />
         </div>
@@ -98,6 +123,7 @@ export function AuthLoginLayout({
                   id="login-email"
                   type="email"
                   autoComplete="username"
+                  placeholder="you@company.com"
                   className={cn(loginType.input, 'pl-9')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -156,36 +182,35 @@ export function AuthLoginLayout({
 
             <div className="relative py-1 text-center">
               <span className="absolute inset-x-0 top-1/2 border-t border-border" aria-hidden />
-              <span className={cn(loginType.meta, 'relative bg-background px-3')}>or</span>
+              <span className={cn(loginType.meta, 'relative bg-background px-3')}>or continue with</span>
             </div>
 
             <Button
               type="button"
               variant="outline"
-              className={cn(loginType.buttonMuted, 'w-full')}
+              className={cn(loginType.buttonMuted, 'w-full gap-2.5')}
               onClick={() => toast.message('SSO is a UI placeholder — connect your IdP later.')}
             >
+              <SsoColorLogo className="size-5 shrink-0" />
               Continue with SSO
             </Button>
           </form>
 
           <p className={cn(loginType.body, 'mt-6 text-center')}>
-            Need an account?{' '}
+            Don&apos;t have an account?{' '}
             <button type="button" className={loginType.link} onClick={() => toast.message('Ask your organization admin for an invite (mock).')}>
-              Create account
+              Create an account
             </button>
           </p>
 
           <p className={cn(loginType.meta, 'mt-8 flex items-center justify-center gap-1.5')}>
             <ShieldCheck className="size-3.5 text-primary" aria-hidden />
-            Secured workspace · mock auth for demo only
+            Secure workspace access
           </p>
 
           {demoSlot}
         </div>
       </div>
-
-      <LoginShowcase />
 
       <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
         <DialogContent>

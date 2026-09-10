@@ -140,24 +140,3 @@ h1, h2, h3, .font-display {
   background: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
 }
 
-/* Login left-panel: stack enter from bottom (not marquee scroll) */
-@keyframes login-stack-enter {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 1.25rem, 0);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-.login-stack-enter {
-  animation: login-stack-enter 0.45s ease-out both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .login-stack-enter {
-    animation: none;
-  }
-}

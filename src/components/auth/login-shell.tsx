@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 import { Check, ScanLine } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -96,11 +97,13 @@ function FeedCard({ item }: { item: FeedItem }) {
 }
 
 const STACK_SIZE = 3
-const STACK_INTERVAL_MS = 2400
+const STACK_INTERVAL_MS = 2800
+
+const stackSpring = { type: 'spring' as const, stiffness: 280, damping: 32, mass: 0.85 }
 
 /**
- * Notification stack (not a marquee): new card enters at the bottom,
- * older cards shift up; top card leaves. Cycles through 20+ items.
+ * Notification stack: new card enters at the bottom, older cards shift up;
+ * top card exits. Smooth layout + spring (not a marquee).
  */
 function ActivityFeedStack() {
   const [stack, setStack] = useState(() =>
@@ -122,17 +125,27 @@ function ActivityFeedStack() {
     return () => window.clearInterval(timer)
   }, [])
 
-  // Staircase: top flush left / widest; each lower card steps further right (matches reference).
+  // Staircase: top flush / widest; each lower card steps further right.
   const step = ['ml-0 w-full', 'ml-6 w-[94%]', 'ml-12 w-[88%]'] as const
 
   return (
     <div className="relative mt-8 h-[280px] xl:h-[300px]" aria-hidden>
       <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end gap-3">
-        {stack.map((item, i) => (
-          <div key={item.key} className={cn('login-stack-enter', step[i] ?? step[2])}>
-            <FeedCard item={item} />
-          </div>
-        ))}
+        <AnimatePresence initial={false} mode="popLayout">
+          {stack.map((item, i) => (
+            <motion.div
+              key={item.key}
+              layout
+              initial={{ opacity: 0, y: 36, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -24, scale: 0.96 }}
+              transition={stackSpring}
+              className={step[i] ?? step[2]}
+            >
+              <FeedCard item={item} />
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     </div>
   )
@@ -151,7 +164,7 @@ const DEFAULT_SLIDES: ShowcaseSlide[] = [
   {
     id: 'capture',
     title: 'Capture. Connect.\nFollow up.',
-    body: 'Scan business cards at events, review OCR fields, and turn meetings into contacts and follow-ups.',
+    body: 'Turn every business card into an organised contact, linked to the event it came from and the follow-up it deserves.',
   },
 ]
 
@@ -217,7 +230,9 @@ export function LoginShowcase({ slides = DEFAULT_SLIDES }: { slides?: ShowcaseSl
           ) : (
             <span />
           )}
-          <p className="font-sans text-xs font-normal tracking-normal text-slate-500 dark:text-slate-400">Demo UI · mock authentication</p>
+          <p className="font-sans text-xs font-normal tracking-normal text-slate-500 dark:text-slate-400">
+            Trusted by revenue teams to keep every conversation moving.
+          </p>
         </div>
       </div>
     </div>
