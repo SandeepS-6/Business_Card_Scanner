@@ -20,7 +20,7 @@ export function LoginPage() {
   return (
     <AuthLoginLayout
       productLabel="your workspace"
-      defaultEmail={import.meta.env.DEV ? 'admin@nexus-events.example' : ''}
+      defaultEmail=""
       error={error}
       expired={expired}
       submitting={submitting}
