@@ -12,6 +12,7 @@ import {
 } from '@dnd-kit/core'
 import { PageHeader } from '@/components/shared/page-header'
 import { DataTable } from '@/components/shared/data-table'
+import { SearchField } from '@/components/shared/search-field'
 import { EmptyState } from '@/components/shared/empty-state'
 import { LeadQualityBadge, LeadStatusBadge } from '@/components/shared/status-badges'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -29,15 +30,25 @@ export function LeadsPage() {
   const { data: serverLeads = [] } = useQuery({ queryKey: ['leads', orgId], queryFn: () => leadService.list(orgId), enabled: !!orgId })
   const { data: contacts = [] } = useQuery({ queryKey: ['contacts', orgId], queryFn: () => contactService.list(orgId), enabled: !!orgId })
   const [leads, setLeads] = useState<Lead[] | null>(null)
+  const [q, setQ] = useState('')
   const rows = leads ?? serverLeads
+
+  const visibleRows = useMemo(() => {
+    const query = q.trim().toLowerCase()
+    if (!query) return rows
+    return rows.filter((l) => {
+      const c = contacts.find((x) => x.id === l.contactId)
+      return `${c?.fullName ?? ''} ${c?.company ?? ''} ${l.status} ${l.quality}`.toLowerCase().includes(query)
+    })
+  }, [rows, q, contacts])
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
   const byStatus = useMemo(() => {
     const map = Object.fromEntries(COLUMNS.map((c) => [c, [] as Lead[]])) as Record<LeadStatus, Lead[]>
-    rows.forEach((l) => map[l.status].push(l))
+    visibleRows.forEach((l) => map[l.status].push(l))
     return map
-  }, [rows])
+  }, [visibleRows])
 
   const onDragEnd = (event: DragEndEvent) => {
     const over = event.over?.id as LeadStatus | undefined
@@ -60,6 +71,9 @@ export function LeadsPage() {
   return (
     <div>
       <PageHeader title="Leads" description="Table and kanban views for pipeline management." />
+      <div className="mb-4">
+        <SearchField value={q} onChange={setQ} placeholder="Search leads…" />
+      </div>
       <Tabs defaultValue="table">
         <TabsList>
           <TabsTrigger value="table">Table</TabsTrigger>
@@ -76,7 +90,7 @@ export function LeadsPage() {
         </TabsContent>
         <TabsContent value="table">
           <DataTable columns={['Contact', 'Company', 'Event', 'Owner', 'Status', 'Quality', 'Last activity', 'Next follow-up']}>
-            {rows.map((l) => {
+            {visibleRows.map((l) => {
               const c = contacts.find((x) => x.id === l.contactId)
               const owner = userService.get(l.ownerId)
               return (

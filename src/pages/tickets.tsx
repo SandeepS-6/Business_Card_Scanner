@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PageHeader } from '@/components/shared/page-header'
 import { DataTable } from '@/components/shared/data-table'
+import { SearchField } from '@/components/shared/search-field'
 import { EmptyState } from '@/components/shared/empty-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -42,6 +43,7 @@ export function TicketsPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [status, setStatus] = useState<(typeof STATUS_FILTERS)[number]>('all')
+  const [q, setQ] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
   const [subject, setSubject] = useState('')
   const [category, setCategory] = useState<TicketCategory>('technical')
@@ -54,10 +56,14 @@ export function TicketsPage() {
     enabled: !!organization,
   })
 
-  const filtered = useMemo(
-    () => (status === 'all' ? data : data.filter((t) => t.status === status)),
-    [data, status],
-  )
+  const filtered = useMemo(() => {
+    const byStatus = status === 'all' ? data : data.filter((t) => t.status === status)
+    const query = q.trim().toLowerCase()
+    if (!query) return byStatus
+    return byStatus.filter((t) =>
+      `${t.id} ${t.subject} ${t.requester} ${t.assignee ?? ''} ${t.priority}`.toLowerCase().includes(query),
+    )
+  }, [data, status, q])
 
   const create = useMutation({
     mutationFn: () =>
@@ -87,12 +93,15 @@ export function TicketsPage() {
         description="Lightweight helpdesk — conversation UI only, no backend."
         actions={<Button onClick={() => setCreateOpen(true)}>Create ticket</Button>}
       />
-      <div className="mb-4 flex flex-wrap gap-1">
-        {STATUS_FILTERS.map((s) => (
-          <Button key={s} size="sm" variant={status === s ? 'default' : 'outline'} onClick={() => setStatus(s)}>
-            {s === 'all' ? 'All' : s}
-          </Button>
-        ))}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <SearchField value={q} onChange={setQ} placeholder="Search tickets…" />
+        <div className="flex flex-wrap gap-1">
+          {STATUS_FILTERS.map((s) => (
+            <Button key={s} size="sm" variant={status === s ? 'default' : 'outline'} onClick={() => setStatus(s)}>
+              {s === 'all' ? 'All' : s}
+            </Button>
+          ))}
+        </div>
       </div>
       {isLoading ? <p className="text-sm text-muted-foreground">Loading tickets…</p> : null}
       {!isLoading && filtered.length === 0 ? (

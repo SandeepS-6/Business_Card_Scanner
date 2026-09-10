@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PageHeader } from '@/components/shared/page-header'
 import { DataTable } from '@/components/shared/data-table'
+import { SearchField } from '@/components/shared/search-field'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { Badge } from '@/components/ui/badge'
@@ -59,12 +60,19 @@ export function AutomationsPage() {
   const qc = useQueryClient()
   const navigate = useNavigate()
   const canManage = can(user?.role, 'AUTOMATIONS_MANAGE')
+  const [q, setQ] = useState('')
 
   const { data = [], isLoading } = useQuery({
     queryKey: ['automations', organization?.id],
     queryFn: () => automationService.list(organization!.id),
     enabled: !!organization,
   })
+
+  const filtered = useMemo(() => {
+    const query = q.trim().toLowerCase()
+    if (!query) return data
+    return data.filter((a) => `${a.name} ${a.trigger} ${a.status} ${a.createdBy}`.toLowerCase().includes(query))
+  }, [data, q])
 
   const setStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: AutomationStatus }) =>
@@ -83,12 +91,15 @@ export function AutomationsPage() {
           ) : null
         }
       />
+      <div className="mb-4">
+        <SearchField value={q} onChange={setQ} placeholder="Search automations…" />
+      </div>
       {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
-      {!isLoading && data.length === 0 ? (
-        <EmptyState title="No automations" description="Create a rule to automate follow-ups and tags." />
+      {!isLoading && filtered.length === 0 ? (
+        <EmptyState title="No automations" description={q ? 'No automations match your search.' : 'Create a rule to automate follow-ups and tags.'} />
       ) : (
         <DataTable columns={['Name', 'Status', 'Trigger', 'Last run', 'Runs', 'Success', 'Created by', 'Updated', 'Actions']}>
-          {data.map((a) => (
+          {filtered.map((a) => (
             <tr key={a.id}>
               <td className="px-4 py-3 font-medium">
                 <Link className="hover:underline" to={`/automations/${a.id}`}>

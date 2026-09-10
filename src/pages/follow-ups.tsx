@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { PageHeader } from '@/components/shared/page-header'
 import { DataTable } from '@/components/shared/data-table'
+import { SearchField } from '@/components/shared/search-field'
 import { EmptyState } from '@/components/shared/empty-state'
 import { FollowUpStatusBadge } from '@/components/shared/status-badges'
 import { Button } from '@/components/ui/button'
@@ -22,7 +23,18 @@ export function FollowUpsPage() {
   const { data = [] } = useQuery({ queryKey: ['followups', orgId], queryFn: () => followUpService.list(orgId), enabled: !!orgId })
   const { data: contacts = [] } = useQuery({ queryKey: ['contacts', orgId], queryFn: () => contactService.list(orgId), enabled: !!orgId })
   const [open, setOpen] = useState(false)
+  const [q, setQ] = useState('')
   const [viewMonth] = useState(new Date(2026, 8, 1))
+
+  const listRows = useMemo(() => {
+    const query = q.trim().toLowerCase()
+    if (!query) return data
+    return data.filter((f) => {
+      const c = contacts.find((x) => x.id === f.contactId)
+      const u = userService.get(f.assignedUserId)
+      return `${c?.fullName ?? ''} ${f.channel} ${f.status} ${u?.firstName ?? ''}`.toLowerCase().includes(query)
+    })
+  }, [data, q, contacts])
 
   const byDay = useMemo(() => {
     const map = new Map<string, typeof data>()
@@ -46,16 +58,19 @@ export function FollowUpsPage() {
         actions={<Button onClick={() => setOpen(true)}><Plus className="size-4" /> Create Follow-up</Button>}
       />
       <Tabs defaultValue="list">
-        <TabsList>
-          <TabsTrigger value="list">List</TabsTrigger>
-          <TabsTrigger value="calendar">Calendar</TabsTrigger>
-        </TabsList>
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <TabsList>
+            <TabsTrigger value="list">List</TabsTrigger>
+            <TabsTrigger value="calendar">Calendar</TabsTrigger>
+          </TabsList>
+          <SearchField value={q} onChange={setQ} placeholder="Search follow-ups…" />
+        </div>
         <TabsContent value="list">
-          {data.length === 0 ? (
-            <EmptyState title="No follow-ups" description="Create a follow-up from a contact or lead." actionLabel="Create" onAction={() => setOpen(true)} />
+          {listRows.length === 0 ? (
+            <EmptyState title="No follow-ups" description={q ? 'No follow-ups match your search.' : 'Create a follow-up from a contact or lead.'} actionLabel="Create" onAction={() => setOpen(true)} />
           ) : (
             <DataTable columns={['Contact', 'Lead', 'Event', 'Assigned', 'Due date', 'Channel', 'Status']}>
-              {data.map((f) => {
+              {listRows.map((f) => {
                 const c = contacts.find((x) => x.id === f.contactId)
                 const u = userService.get(f.assignedUserId)
                 return (

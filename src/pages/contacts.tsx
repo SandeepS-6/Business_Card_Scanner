@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Download, Filter, Plus, Search, Upload } from 'lucide-react'
+import { Download, Filter, Plus, Upload } from 'lucide-react'
 import { PageHeader } from '@/components/shared/page-header'
 import { DataTable, Pagination } from '@/components/shared/data-table'
+import { SearchField } from '@/components/shared/search-field'
 import { EmptyState, PermissionDenied } from '@/components/shared/empty-state'
 import { can } from '@/security/permissions'
 import { LeadQualityBadge, LeadStatusBadge } from '@/components/shared/status-badges'
@@ -90,10 +91,7 @@ export function ContactsPage() {
       />
 
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="pl-9" placeholder="Search contacts…" value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} />
-        </div>
+        <SearchField value={q} onChange={(v) => { setQ(v); setPage(1) }} placeholder="Search contacts…" />
         <div className="flex flex-wrap gap-2">
           <Select value={status} onValueChange={(v) => { setStatus(v); setPage(1) }}>
             <SelectTrigger className="w-[150px]"><SelectValue placeholder="Status" /></SelectTrigger>

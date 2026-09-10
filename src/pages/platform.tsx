@@ -1,7 +1,9 @@
 import { Link, useParams } from 'react-router-dom'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { PageHeader } from '@/components/shared/page-header'
 import { DataTable } from '@/components/shared/data-table'
+import { SearchField } from '@/components/shared/search-field'
 import { HealthStatusBadge } from '@/components/shared/status-badges'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -60,11 +62,20 @@ function UsageBars({ usage }: { usage: UsageMetrics }) {
 
 export function PlatformOrganizationsPage() {
   const { data = [] } = useQuery({ queryKey: ['orgs'], queryFn: () => orgService.list() })
+  const [q, setQ] = useState('')
+  const filtered = useMemo(() => {
+    const query = q.trim().toLowerCase()
+    if (!query) return data
+    return data.filter((o) => `${o.name} ${o.plan} ${o.status}`.toLowerCase().includes(query))
+  }, [data, q])
   return (
     <div>
       <PageHeader title="Organizations" description="Platform-wide tenant management." />
+      <div className="mb-4">
+        <SearchField value={q} onChange={setQ} placeholder="Search organizations…" />
+      </div>
       <DataTable columns={['Organization', 'Status', 'Users', 'Cards', 'Storage', 'OCR', 'Email', 'WhatsApp', 'Plan', 'Created', 'Actions']}>
-        {data.map((o) => (
+        {filtered.map((o) => (
           <tr key={o.id}>
             <td className="px-4 py-3"><Link className="font-medium text-primary hover:underline" to={`/platform/organizations/${o.id}`}>{o.name}</Link></td>
             <td className="px-4 py-3"><Badge variant={o.status === 'active' ? 'success' : 'danger'}>{o.status}</Badge></td>
@@ -151,11 +162,22 @@ export function PlatformOrgDetailPage() {
 
 export function PlatformUsersPage() {
   const { data = [] } = useQuery({ queryKey: ['platform-users'], queryFn: () => userService.platformUsers() })
+  const [q, setQ] = useState('')
+  const filtered = useMemo(() => {
+    const query = q.trim().toLowerCase()
+    if (!query) return data
+    return data.filter((u) =>
+      `${u.firstName} ${u.lastName} ${u.email} ${u.role} ${u.orgId ?? ''}`.toLowerCase().includes(query),
+    )
+  }, [data, q])
   return (
     <div>
       <PageHeader title="Platform Users" description="All users across organizations." />
+      <div className="mb-4">
+        <SearchField value={q} onChange={setQ} placeholder="Search users…" />
+      </div>
       <DataTable columns={['Name', 'Email', 'Role', 'Org', 'Status', 'Last active']}>
-        {data.map((u) => (
+        {filtered.map((u) => (
           <tr key={u.id}>
             <td className="px-4 py-3">{u.firstName} {u.lastName}</td>
             <td className="px-4 py-3">{u.email}</td>

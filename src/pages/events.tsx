@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { PageHeader } from '@/components/shared/page-header'
 import { DataTable } from '@/components/shared/data-table'
+import { SearchField } from '@/components/shared/search-field'
 import { EmptyState } from '@/components/shared/empty-state'
 import { EventStatusBadge, LeadQualityBadge, LeadStatusBadge } from '@/components/shared/status-badges'
 import { AppChart } from '@/components/charts/app-chart'
@@ -40,9 +41,16 @@ export function EventsPage() {
   const orgId = organization?.id ?? ''
   const { data = [], isLoading } = useQuery({ queryKey: ['events', orgId], queryFn: () => eventService.list(orgId), enabled: !!orgId })
   const [open, setOpen] = useState(false)
+  const [q, setQ] = useState('')
   const form = useForm<z.infer<typeof eventSchema>>({
     resolver: zodResolver(eventSchema),
     defaultValues: { name: '', description: '', startDate: '', endDate: '', location: '' },
+  })
+
+  const filtered = data.filter((e) => {
+    const query = q.trim().toLowerCase()
+    if (!query) return true
+    return `${e.name} ${e.location} ${e.status}`.toLowerCase().includes(query)
   })
 
   return (
@@ -52,13 +60,16 @@ export function EventsPage() {
         description="Manage trade shows and field events."
         actions={<Button onClick={() => setOpen(true)}><Plus className="size-4" /> Create Event</Button>}
       />
+      <div className="mb-4">
+        <SearchField value={q} onChange={setQ} placeholder="Search events…" />
+      </div>
       {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
-      {!isLoading && data.length === 0 ? (
-        <EmptyState title="No events" description="Create an event to start capturing cards." actionLabel="Create Event" onAction={() => setOpen(true)} />
+      {!isLoading && filtered.length === 0 ? (
+        <EmptyState title="No events" description={q ? 'No events match your search.' : 'Create an event to start capturing cards.'} actionLabel="Create Event" onAction={() => setOpen(true)} />
       ) : (
         <>
           <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:hidden">
-            {data.map((e) => (
+            {filtered.map((e) => (
               <Link key={e.id} to={`/events/${e.id}`} className="rounded-lg border border-border bg-card p-4">
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-medium">{e.name}</p>
@@ -71,7 +82,7 @@ export function EventsPage() {
           </div>
           <div className="hidden lg:block">
             <DataTable columns={['Event name', 'Date', 'Location', 'Owner', 'Cards scanned', 'Contacts', 'Leads', 'Status']}>
-              {data.map((e) => {
+              {filtered.map((e) => {
                 const owner = userService.get(e.ownerId)
                 return (
                   <tr key={e.id} className="hover:bg-muted/30">
