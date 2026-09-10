@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Download, Filter, Plus, Search, Upload } from 'lucide-react'
@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { TableSkeleton } from '@/components/ui/skeleton'
 import { useApp } from '@/context/app-context'
+import { usePageSize } from '@/hooks/use-page-size'
 import { contactService, eventService, userService } from '@/services/api'
 import { formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -26,7 +27,11 @@ export function ContactsPage() {
   const [quality, setQuality] = useState('all')
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<string[]>([])
-  const pageSize = 8
+  const pageSize = usePageSize()
+
+  useEffect(() => {
+    setPage(1)
+  }, [pageSize])
 
   const { data = [], isLoading } = useQuery({
     queryKey: ['contacts', orgId],

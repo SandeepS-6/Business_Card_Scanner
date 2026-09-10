@@ -216,11 +216,8 @@ export function TicketDetailPage() {
       <PageHeader
         title={ticket.subject}
         description={`${ticket.id} · ${ticket.category}`}
-        actions={
-          <Button variant="outline" onClick={() => navigate('/tickets')}>
-            All tickets
-          </Button>
-        }
+        backTo="/tickets"
+        backLabel="Back to tickets"
       />
       <div className="mb-4 flex flex-wrap gap-2 text-sm">
         <Badge variant={priorityVariant(ticket.priority)}>{ticket.priority}</Badge>

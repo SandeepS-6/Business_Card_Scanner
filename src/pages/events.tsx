@@ -190,9 +190,15 @@ export function EventDetailPage() {
 
   return (
     <div>
-      <PageHeader title={event.name} description={`${event.location} · ${formatDate(event.startDate)} – ${formatDate(event.endDate)}`} actions={<EventStatusBadge status={event.status} />} />
+      <PageHeader
+        title={event.name}
+        description={`${event.location} · ${formatDate(event.startDate)} – ${formatDate(event.endDate)}`}
+        backTo="/events"
+        backLabel="Back to events"
+        actions={<EventStatusBadge status={event.status} />}
+      />
       <Tabs defaultValue="overview">
-        <TabsList className="flex h-auto flex-wrap">
+        <TabsList className="scrollbar-none flex h-auto flex-wrap sm:flex-nowrap sm:overflow-x-auto">
           {['overview', 'contacts', 'leads', 'scans', 'team', 'follow-ups', 'analytics', 'settings'].map((t) => (
             <TabsTrigger key={t} value={t} className="capitalize">{t}</TabsTrigger>
           ))}

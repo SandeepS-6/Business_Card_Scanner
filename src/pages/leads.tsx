@@ -67,7 +67,7 @@ export function LeadsPage() {
         </TabsList>
         <TabsContent value="kanban">
           <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-            <div className="flex gap-3 overflow-x-auto pb-4">
+            <div className="flex gap-3 overflow-x-auto scrollbar-none pb-4">
               {COLUMNS.map((status) => (
                 <KanbanColumn key={status} status={status} leads={byStatus[status]} contacts={contacts} />
               ))}

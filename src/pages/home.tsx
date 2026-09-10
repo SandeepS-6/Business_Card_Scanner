@@ -201,7 +201,7 @@ export function HomePage() {
               emptyMessage="No scan activity for this period."
             />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto scrollbar-none">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-muted-foreground">

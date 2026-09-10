@@ -115,7 +115,7 @@ export function NotificationPanel({
             </div>
           </div>
 
-          <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-0.5" role="tablist" aria-label="Filter notifications">
+          <div className="mt-3 flex items-center gap-1.5 overflow-x-auto scrollbar-none" role="tablist" aria-label="Filter notifications">
             {FILTERS.map((f) => (
               <button
                 key={f.key}
@@ -150,7 +150,7 @@ export function NotificationPanel({
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-3">
+        <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin p-3">
           {isLoading ? <NotificationSkeletonList /> : null}
           {isError ? (
             <div className="flex min-h-48 flex-col items-center justify-center gap-3 px-4 text-center">

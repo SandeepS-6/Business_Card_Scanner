@@ -101,7 +101,12 @@ export function PlatformOrgDetailPage() {
   if (!org) return <p className="text-sm text-muted-foreground">Loading…</p>
   return (
     <div>
-      <PageHeader title={org.name} description={`${org.plan} · ${org.status}`} />
+      <PageHeader
+        title={org.name}
+        description={`${org.plan} · ${org.status}`}
+        backTo="/platform/organizations"
+        backLabel="Back to organizations"
+      />
       <Tabs defaultValue="overview">
         <TabsList className="flex h-auto flex-wrap">
           {['overview', 'users', 'usage', 'branding', 'templates', 'integrations', 'limits', 'audit'].map((t) => (

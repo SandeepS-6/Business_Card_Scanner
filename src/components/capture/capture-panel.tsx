@@ -248,7 +248,7 @@ export function CapturePanel({
                   {uploadedImages.length > 1 ? (
                     <div className="mt-4">
                       <p className="mb-2 text-sm font-medium">Batch queue</p>
-                      <div className="flex gap-2 overflow-x-auto pb-1">
+                      <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
                         {uploadedImages.map((item, index) => (
                           <button
                             key={`${item.slice(0, 24)}-${index}`}

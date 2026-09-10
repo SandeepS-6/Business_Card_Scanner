@@ -11,7 +11,7 @@ export function DataTable({
   className?: string
 }) {
   return (
-    <div className={cn('overflow-x-auto rounded-lg border border-border bg-card', className)}>
+    <div className={cn('scrollbar-none overflow-x-auto rounded-lg border border-border bg-card', className)}>
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead className="border-b border-border bg-muted/50">
           <tr>
@@ -40,15 +40,17 @@ export function Pagination({
   onChange: (page: number) => void
 }) {
   const pages = Math.max(1, Math.ceil(total / pageSize))
+  const from = total === 0 ? 0 : (page - 1) * pageSize + 1
+  const to = Math.min(page * pageSize, total)
   return (
-    <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
       <span>
-        Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}
+        Showing {from}–{to} of {total}
       </span>
       <div className="flex gap-2">
         <button
           type="button"
-          className="rounded-md border border-border px-3 py-1 disabled:opacity-50"
+          className="h-9 rounded-md border border-border px-3 disabled:opacity-50"
           disabled={page <= 1}
           onClick={() => onChange(page - 1)}
         >
@@ -56,7 +58,7 @@ export function Pagination({
         </button>
         <button
           type="button"
-          className="rounded-md border border-border px-3 py-1 disabled:opacity-50"
+          className="h-9 rounded-md border border-border px-3 disabled:opacity-50"
           disabled={page >= pages}
           onClick={() => onChange(page + 1)}
         >

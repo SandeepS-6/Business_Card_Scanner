@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { PageHeader } from '@/components/shared/page-header'
 import { DataTable, Pagination } from '@/components/shared/data-table'
@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useApp } from '@/context/app-context'
+import { usePageSize } from '@/hooks/use-page-size'
 import { auditService, userService } from '@/services/api'
 import { formatDateTime } from '@/lib/utils'
 
@@ -19,7 +20,11 @@ export function AuditLogsPage({ platform = false }: { platform?: boolean }) {
   const [actionFilter, setActionFilter] = useState('')
   const [resultFilter, setResultFilter] = useState('all')
   const [page, setPage] = useState(1)
-  const pageSize = 8
+  const pageSize = usePageSize()
+
+  useEffect(() => {
+    setPage(1)
+  }, [pageSize])
 
   const filtered = useMemo(() => {
     return data.filter((a) => {

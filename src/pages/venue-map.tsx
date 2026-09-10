@@ -157,7 +157,7 @@ export function VenueMapPage() {
               Waiting for WebSocket
             </span>
           </div>
-          <ul className="min-h-0 flex-1 space-y-0 overflow-y-auto" aria-live="polite" aria-label="Scanned contacts feed">
+          <ul className="min-h-0 flex-1 space-y-0 overflow-y-auto scrollbar-thin" aria-live="polite" aria-label="Scanned contacts feed">
             {panelFeed.length === 0 ? (
               <li className="py-6 text-center text-sm text-muted-foreground">No scans for this booth yet.</li>
             ) : (

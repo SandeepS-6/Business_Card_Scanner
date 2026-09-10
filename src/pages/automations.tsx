@@ -244,11 +244,10 @@ export function AutomationBuilderPage() {
       <PageHeader
         title={isNew ? 'Create automation' : name || 'Edit automation'}
         description="Visual builder · mock execution only"
+        backTo="/automations"
+        backLabel="Back to automations"
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => navigate('/automations')}>
-              Back
-            </Button>
             <Button variant="outline" onClick={() => setTestOpen(true)}>
               Test
             </Button>

@@ -63,6 +63,8 @@ export function ContactDetailPage() {
       <PageHeader
         title={contact.fullName}
         description={`${contact.jobTitle} · ${contact.company}`}
+        backTo="/contacts"
+        backLabel="Back to contacts"
         actions={
           <>
             <Button variant="outline" onClick={() => toast.message('Email composer (mock)')}>Send email</Button>
@@ -73,7 +75,7 @@ export function ContactDetailPage() {
       />
 
       <Tabs defaultValue="overview">
-        <TabsList className="flex h-auto flex-wrap">
+        <TabsList className="scrollbar-none flex h-auto flex-wrap sm:flex-nowrap sm:overflow-x-auto">
           {['overview', 'lead', 'events', 'notes', 'follow-ups', 'communication', 'activity', 'card'].map((t) => (
             <TabsTrigger key={t} value={t} className="capitalize">{t.replace('-', ' ')}</TabsTrigger>
           ))}

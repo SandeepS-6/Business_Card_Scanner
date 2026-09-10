@@ -122,13 +122,12 @@ export function ReviewPage() {
       <PageHeader
         title="Review Card"
         description="Verify OCR fields. Low confidence fields need review."
+        backTo="/"
+        backLabel="Back to home"
         actions={
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => navigate('/capture')}>
               Reprocess
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/')}>
-              Cancel
             </Button>
             <Button variant="secondary" loading={saving} onClick={() => void saveFlow(false)}>
               Save
