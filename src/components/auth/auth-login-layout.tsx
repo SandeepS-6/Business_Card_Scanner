@@ -50,8 +50,8 @@ export function AuthLoginLayout({
         </div>
 
         <div className="mx-auto w-full max-w-[420px]">
-          <h1 className="font-display text-3xl font-semibold tracking-tight">Welcome back</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Sign in to continue to {productLabel}.</p>
+          <h1 className="font-sans text-3xl font-semibold tracking-[-0.02em] text-foreground">Welcome back</h1>
+          <p className="mt-2 font-sans text-sm font-normal text-muted-foreground">Sign in to continue to {productLabel}.</p>
 
           {expired ? (
             <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100" role="status">

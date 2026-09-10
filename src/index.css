@@ -139,3 +139,23 @@ h1, h2, h3, .font-display {
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
 }
+
+/* Login left-panel activity feed: bottom → top seamless loop */
+@keyframes login-feed-up {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, -50%, 0);
+  }
+}
+
+.login-feed-marquee {
+  animation: login-feed-up 48s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-feed-marquee {
+    animation: none;
+  }
+}
