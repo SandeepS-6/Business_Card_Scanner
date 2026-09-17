@@ -57,6 +57,7 @@ export function Header() {
   } = useApp()
   const [searchOpen, setSearchOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [searchMod, setSearchMod] = useState('Ctrl')
   const location = useLocation()
   const navigate = useNavigate()
   const crumbs = crumbsFromPath(location.pathname)
@@ -68,6 +69,11 @@ export function Header() {
   })
   const unread = notifs.filter((n) => !n.read).length
   const pendingQueue = organization ? queueService.pendingCount(organization.id) : 0
+
+  useEffect(() => {
+    const mac = /Mac|iPhone|iPad|iPod/.test(navigator.platform) || navigator.userAgent.includes('Mac')
+    setSearchMod(mac ? '⌘' : 'Ctrl')
+  }, [])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -122,9 +128,12 @@ export function Header() {
           <Button variant="outline" className="hidden h-9 min-w-[12rem] justify-start gap-2 sm:inline-flex" onClick={() => setSearchOpen(true)}>
             <Search className="size-4 shrink-0" />
             <span className="flex-1 text-left text-muted-foreground">Search…</span>
-            <kbd className="rounded border border-border bg-muted px-1.5 text-[10px] leading-none">⌘K</kbd>
+            <span className="flex items-center gap-0.5 text-muted-foreground" aria-hidden>
+              <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium leading-none">{searchMod}</kbd>
+              <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium leading-none">K</kbd>
+            </span>
           </Button>
-          <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => setSearchOpen(true)} aria-label="Search">
+          <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => setSearchOpen(true)} aria-label={`Search (${searchMod}+K)`}>
             <Search className="size-4" />
           </Button>
 

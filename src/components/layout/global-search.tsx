@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Command } from 'cmdk'
 import { useApp } from '@/context/app-context'
@@ -10,6 +10,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
   const { organization, user } = useApp()
   const [q, setQ] = useState('')
   const [results, setResults] = useState<Awaited<ReturnType<typeof searchService.search>> | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
   const showOrgs = can(user?.role, 'SUPER_ADMIN_ACCESS')
   const showAutomations = can(user?.role, 'AUTOMATIONS_VIEW')
@@ -32,11 +33,18 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden p-0 sm:max-w-xl">
+      <DialogContent
+        className="overflow-hidden p-0 sm:max-w-xl"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault()
+          inputRef.current?.focus()
+        }}
+      >
         <DialogTitle className="sr-only">Global search</DialogTitle>
         <Command className="bg-card" shouldFilter={false}>
           <div className="flex items-center border-b border-border px-3">
             <Command.Input
+              ref={inputRef}
               value={q}
               onValueChange={setQ}
               placeholder="Search contacts, leads, events, tickets, automations…"

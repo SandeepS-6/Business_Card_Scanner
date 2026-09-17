@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   Activity,
@@ -34,6 +36,7 @@ import { cn } from '@/lib/utils'
 import { useApp } from '@/context/app-context'
 import { canAccess } from '@/services/api'
 import type { Role } from '@/types'
+import { NavPagePreview } from '@/components/layout/nav-page-preview'
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; area: string }
 
@@ -86,7 +89,129 @@ const superNav: NavItem[] = [
   { to: '/platform/audit', label: 'Platform Audit Logs', icon: Activity, area: 'platform.audit' },
 ]
 
-function NavSection({ title, items, collapsed, role }: { title: string; items: NavItem[]; collapsed: boolean; role: Role }) {
+function useFineHover() {
+  const [ok, setOk] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(hover: hover) and (pointer: fine)')
+    const sync = () => setOk(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
+  return ok
+}
+
+const PREVIEW_W = 260
+const PREVIEW_GAP = 10
+
+function NavItemLink({
+  item,
+  collapsed,
+  showPreview,
+}: {
+  item: NavItem
+  collapsed: boolean
+  showPreview: boolean
+}) {
+  const triggerRef = useRef<HTMLAnchorElement>(null)
+  const [open, setOpen] = useState(false)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+  const openTimer = useRef(0)
+  const closeTimer = useRef(0)
+
+  const clearTimers = () => {
+    window.clearTimeout(openTimer.current)
+    window.clearTimeout(closeTimer.current)
+  }
+
+  const place = () => {
+    const r = triggerRef.current?.getBoundingClientRect()
+    if (!r) return
+    const left = Math.min(r.right + PREVIEW_GAP, window.innerWidth - PREVIEW_W - 8)
+    // Center on the icon; clamp so the card stays in the viewport (~220px tall).
+    const top = Math.min(Math.max(r.top + r.height / 2, 110), window.innerHeight - 110)
+    setPos({ top, left })
+  }
+
+  const scheduleOpen = () => {
+    if (!showPreview) return
+    window.clearTimeout(closeTimer.current)
+    openTimer.current = window.setTimeout(() => {
+      place()
+      setOpen(true)
+    }, 280)
+  }
+
+  const scheduleClose = () => {
+    window.clearTimeout(openTimer.current)
+    closeTimer.current = window.setTimeout(() => setOpen(false), 120)
+  }
+
+  useEffect(() => () => clearTimers(), [])
+
+  useEffect(() => {
+    if (!open) return
+    const onScroll = () => setOpen(false)
+    window.addEventListener('scroll', onScroll, true)
+    return () => window.removeEventListener('scroll', onScroll, true)
+  }, [open])
+
+  return (
+    <>
+      <NavLink
+        ref={triggerRef}
+        to={item.to}
+        end={item.to === '/'}
+        title={collapsed && !showPreview ? item.label : undefined}
+        onMouseEnter={scheduleOpen}
+        onMouseLeave={scheduleClose}
+        onFocus={scheduleOpen}
+        onBlur={scheduleClose}
+        className={({ isActive }) =>
+          cn(
+            'flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/80 transition hover:bg-sidebar-accent hover:text-sidebar-foreground',
+            isActive && 'bg-sidebar-accent text-sidebar-foreground font-medium',
+            collapsed && 'justify-center px-2',
+          )
+        }
+      >
+        <item.icon className="size-4 shrink-0" aria-hidden />
+        {!collapsed ? <span>{item.label}</span> : null}
+      </NavLink>
+      {showPreview && open
+        ? createPortal(
+            <div
+              role="tooltip"
+              className="pointer-events-auto fixed z-50 -translate-y-1/2 rounded-lg border border-border bg-popover text-popover-foreground shadow-md"
+              style={{ top: pos.top, left: pos.left, width: PREVIEW_W }}
+              onMouseEnter={() => {
+                window.clearTimeout(closeTimer.current)
+                setOpen(true)
+              }}
+              onMouseLeave={scheduleClose}
+            >
+              <NavPagePreview area={item.area} label={item.label} />
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
+  )
+}
+
+function NavSection({
+  title,
+  items,
+  collapsed,
+  role,
+  showPreview,
+}: {
+  title: string
+  items: NavItem[]
+  collapsed: boolean
+  role: Role
+  showPreview: boolean
+}) {
   const filtered =
     role === 'user'
       ? items.filter((i) => canAccess(role, i.area))
@@ -102,21 +227,7 @@ function NavSection({ title, items, collapsed, role }: { title: string; items: N
       <ul className="space-y-0.5">
         {filtered.map((item) => (
           <li key={item.to}>
-            <NavLink
-              to={item.to}
-              end={item.to === '/'}
-              title={item.label}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/80 transition hover:bg-sidebar-accent hover:text-sidebar-foreground',
-                  isActive && 'bg-sidebar-accent text-sidebar-foreground font-medium',
-                  collapsed && 'justify-center px-2',
-                )
-              }
-            >
-              <item.icon className="size-4 shrink-0" aria-hidden />
-              {!collapsed ? <span>{item.label}</span> : null}
-            </NavLink>
+            <NavItemLink item={item} collapsed={collapsed} showPreview={showPreview} />
           </li>
         ))}
       </ul>
@@ -127,7 +238,10 @@ function NavSection({ title, items, collapsed, role }: { title: string; items: N
 export function Sidebar() {
   const { user, organization, sidebarCollapsed, mobileNavOpen, setMobileNavOpen } = useApp()
   const location = useLocation()
+  const fineHover = useFineHover()
   if (!user) return null
+
+  const showPreview = sidebarCollapsed && fineHover
 
   const content = (
     <aside
@@ -144,13 +258,23 @@ export function Sidebar() {
         )}
       </div>
       <nav className="flex-1 overflow-y-auto scrollbar-none p-2" aria-label="Main">
-        <NavSection title="Main" items={mainNav} collapsed={sidebarCollapsed} role={user.role} />
-        <NavSection title="Communications" items={commNav} collapsed={sidebarCollapsed} role={user.role} />
-        {user.role !== 'user' ? <NavSection title="CRM" items={crmNav} collapsed={sidebarCollapsed} role={user.role} /> : null}
-        <NavSection title="Workspace" items={opsNav} collapsed={sidebarCollapsed} role={user.role} />
-        {user.role !== 'user' ? <NavSection title="Administration" items={adminNav} collapsed={sidebarCollapsed} role={user.role} /> : null}
-        {user.role === 'user' ? <NavSection title="Account" items={[{ to: '/settings', label: 'Settings', icon: Settings, area: 'settings' }]} collapsed={sidebarCollapsed} role={user.role} /> : null}
-        {user.role === 'super_admin' ? <NavSection title="Super Admin" items={superNav} collapsed={sidebarCollapsed} role={user.role} /> : null}
+        <NavSection title="Main" items={mainNav} collapsed={sidebarCollapsed} role={user.role} showPreview={showPreview} />
+        <NavSection title="Communications" items={commNav} collapsed={sidebarCollapsed} role={user.role} showPreview={showPreview} />
+        {user.role !== 'user' ? <NavSection title="CRM" items={crmNav} collapsed={sidebarCollapsed} role={user.role} showPreview={showPreview} /> : null}
+        <NavSection title="Workspace" items={opsNav} collapsed={sidebarCollapsed} role={user.role} showPreview={showPreview} />
+        {user.role !== 'user' ? <NavSection title="Administration" items={adminNav} collapsed={sidebarCollapsed} role={user.role} showPreview={showPreview} /> : null}
+        {user.role === 'user' ? (
+          <NavSection
+            title="Account"
+            items={[{ to: '/settings', label: 'Settings', icon: Settings, area: 'settings' }]}
+            collapsed={sidebarCollapsed}
+            role={user.role}
+            showPreview={showPreview}
+          />
+        ) : null}
+        {user.role === 'super_admin' ? (
+          <NavSection title="Super Admin" items={superNav} collapsed={sidebarCollapsed} role={user.role} showPreview={showPreview} />
+        ) : null}
       </nav>
       {!sidebarCollapsed && organization ? (
         <div className="border-t border-sidebar-border p-3 text-xs text-sidebar-foreground/60">
