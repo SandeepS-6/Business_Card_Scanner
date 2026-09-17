@@ -2,13 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
-  Activity,
   Building2,
   Calendar,
   ClipboardList,
   FileText,
   Gauge,
-  HeartPulse,
   LayoutDashboard,
   Mail,
   Map,
@@ -31,10 +29,14 @@ import {
   LifeBuoy,
   CreditCard,
   Radar,
+  Moon,
+  Sun,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useApp } from '@/context/app-context'
 import { canAccess } from '@/services/api'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { toggleTheme } from '@/store/themeSlice'
 import type { Role } from '@/types'
 import { NavPagePreview } from '@/components/layout/nav-page-preview'
 
@@ -73,6 +75,7 @@ const adminNav: NavItem[] = [
   { to: '/team', label: 'Manage Team', icon: Users, area: 'team' },
   { to: '/organization', label: 'Organization', icon: Building2, area: 'organization' },
   { to: '/billing', label: 'Plans & Billing', icon: CreditCard, area: 'billing' },
+  { to: '/platform/integrations', label: 'Platform Integrations', icon: Layers, area: 'platform.integrations' },
   { to: '/recovery', label: 'Recently Deleted', icon: Trash2, area: 'recovery' },
   { to: '/versions', label: 'Version History', icon: History, area: 'versions' },
   { to: '/audit-logs', label: 'Audit Logs', icon: Shield, area: 'audit' },
@@ -83,10 +86,7 @@ const superNav: NavItem[] = [
   { to: '/platform/organizations', label: 'Organizations', icon: Building2, area: 'platform.orgs' },
   { to: '/platform/users', label: 'Platform Users', icon: UserCog, area: 'platform.users' },
   { to: '/platform/templates', label: 'Global Templates', icon: Globe, area: 'platform.templates' },
-  { to: '/platform/integrations', label: 'Platform Integrations', icon: Layers, area: 'platform.integrations' },
   { to: '/platform/usage', label: 'Usage & Limits', icon: Gauge, area: 'platform.usage' },
-  { to: '/platform/health', label: 'System Health', icon: HeartPulse, area: 'platform.health' },
-  { to: '/platform/audit', label: 'Platform Audit Logs', icon: Activity, area: 'platform.audit' },
 ]
 
 function useFineHover() {
@@ -237,16 +237,30 @@ function NavSection({
 
 export function Sidebar() {
   const { user, organization, sidebarCollapsed, mobileNavOpen, setMobileNavOpen } = useApp()
+  const theme = useAppSelector((s) => s.theme.theme)
+  const dispatch = useAppDispatch()
   const location = useLocation()
   const fineHover = useFineHover()
   if (!user) return null
 
   const showPreview = sidebarCollapsed && fineHover
+  const year = new Date().getFullYear()
+
+  const themeToggle = (
+    <button
+      type="button"
+      onClick={() => dispatch(toggleTheme())}
+      className="flex size-9 shrink-0 items-center justify-center rounded-full border border-sidebar-border text-sidebar-foreground/70 transition hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+    >
+      {theme === 'dark' ? <Sun className="size-4" aria-hidden /> : <Moon className="size-4" aria-hidden />}
+    </button>
+  )
 
   const content = (
     <aside
       className={cn(
-        'sticky top-0 flex h-screen flex-col self-start border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all',
+        'sticky top-0 flex h-dvh flex-col self-start border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all',
         sidebarCollapsed ? 'w-[68px]' : 'w-64',
       )}
     >
@@ -276,12 +290,24 @@ export function Sidebar() {
           <NavSection title="Super Admin" items={superNav} collapsed={sidebarCollapsed} role={user.role} showPreview={showPreview} />
         ) : null}
       </nav>
-      {!sidebarCollapsed && organization ? (
-        <div className="border-t border-sidebar-border p-3 text-xs text-sidebar-foreground/60">
-          <p className="truncate font-medium text-sidebar-foreground/80">{organization.name}</p>
-          <p className="truncate">{organization.plan} plan</p>
-        </div>
-      ) : null}
+      <div className={cn('border-t border-sidebar-border p-3', sidebarCollapsed && 'flex flex-col items-center gap-2')}>
+        {!sidebarCollapsed && organization ? (
+          <div className="mb-2 text-xs text-sidebar-foreground/60">
+            <p className="truncate font-medium text-sidebar-foreground/80">{organization.name}</p>
+            <p className="truncate">{organization.plan} plan</p>
+          </div>
+        ) : null}
+        {sidebarCollapsed ? (
+          themeToggle
+        ) : (
+          <div className="flex items-center justify-between gap-2">
+            <p className="min-w-0 flex-1 truncate text-xs text-sidebar-foreground/50">
+              © {year} All rights reserved
+            </p>
+            {themeToggle}
+          </div>
+        )}
+      </div>
     </aside>
   )
 

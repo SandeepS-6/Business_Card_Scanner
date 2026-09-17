@@ -17,7 +17,12 @@ type FeedItem =
   | { id: string; kind: 'added'; event: string }
   | { id: string; kind: 'progress'; pct: number }
 
-const FEED_SEED: Omit<FeedItem, 'id'>[] = [
+type FeedSeed =
+  | { kind: 'scan'; name: string; meta: string }
+  | { kind: 'added'; event: string }
+  | { kind: 'progress'; pct: number }
+
+const FEED_SEED: FeedSeed[] = [
   { kind: 'scan', name: 'Elena Ruiz', meta: 'Head of Partnerships · Northwind' },
   { kind: 'added', event: 'SaaS Summit 2026' },
   { kind: 'progress', pct: 68 },

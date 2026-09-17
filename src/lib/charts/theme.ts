@@ -6,6 +6,7 @@ export type ChartThemeTokens = {
   primary: string
   tooltipBg: string
   tooltipBorder: string
+  barTrack: string
 }
 
 export function readChartTheme(): ChartThemeTokens {
@@ -19,7 +20,11 @@ export function readChartTheme(): ChartThemeTokens {
     primary: pick('--primary', '#0f766e'),
     tooltipBg: pick('--card', '#ffffff'),
     tooltipBorder: pick('--border', '#e2e8f0'),
+    barTrack: 'color-mix(in oklab, var(--muted-foreground) 18%, transparent)',
   }
 }
 
-export const SERIES_PALETTE = ['#0f766e', '#0ea5e9', '#f59e0b', '#6366f1', '#ef4444', '#94a3b8', '#14b8a6']
+/** Theme-aware palette — primary first, then stable complementary accents. */
+export function seriesPalette(theme: ChartThemeTokens): string[] {
+  return [theme.primary, '#0ea5e9', '#f59e0b', '#6366f1', '#ef4444', '#94a3b8', '#14b8a6']
+}

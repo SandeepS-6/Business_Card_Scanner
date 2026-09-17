@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { RotateCcw, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/shared/page-header'
-import { DataTable } from '@/components/shared/data-table'
+import { DataTable, Pagination, tableActionIconDanger, tableActionIconSuccess } from '@/components/shared/data-table'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/context/app-context'
+import { usePagedRows } from '@/hooks/use-page-size'
 import { recoveryService } from '@/services/features-api'
 import { formatDateTime } from '@/lib/utils'
 import type { DeletedItem, DeletedItemType } from '@/types/features'
@@ -38,6 +40,8 @@ export function RecoveryPage() {
       return !q.trim() || hay.includes(q.trim().toLowerCase())
     })
   }, [data, type, q, userFilter])
+
+  const { page, setPage, pageSize, paged, total } = usePagedRows(filtered, `${type}|${q}|${userFilter}`)
 
   const restoreMut = useMutation({
     mutationFn: (id: string) => recoveryService.restore(id),
@@ -91,37 +95,52 @@ export function RecoveryPage() {
       {isError ? (
         <EmptyState title="Could not load recovery list" description="Try again." actionLabel="Retry" onAction={() => void refetch()} />
       ) : null}
-      {!isLoading && !isError && filtered.length === 0 ? (
+      {!isLoading && !isError && total === 0 ? (
         <EmptyState title="Nothing in recently deleted" description="Deleted contacts, leads, and templates appear here for a limited time." />
       ) : null}
-      {filtered.length ? (
-        <DataTable columns={['Item', 'Type', 'Deleted', 'Deleted by', 'Location', 'Days left', 'Actions']}>
-          {filtered.map((item) => (
-            <tr key={item.id}>
-              <td className="px-4 py-3">
-                <p className="font-medium">{item.name}</p>
-                {item.company ? <p className="text-xs text-muted-foreground">{item.company}</p> : null}
-              </td>
-              <td className="px-4 py-3 capitalize">
-                <Badge variant="secondary">{item.type}</Badge>
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(item.deletedAt)}</td>
-              <td className="px-4 py-3">{item.deletedBy}</td>
-              <td className="px-4 py-3">{item.originalLocation}</td>
-              <td className="px-4 py-3">{item.daysRemaining}</td>
-              <td className="px-4 py-3">
-                <div className="flex flex-wrap gap-1">
-                  <Button size="sm" onClick={() => setRestoreItem(item)}>
-                    Restore
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => setPurgeItem(item)}>
-                    Delete permanently
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </DataTable>
+      {total > 0 ? (
+        <>
+          <DataTable columns={['Item', 'Type', 'Deleted', 'Deleted by', 'Location', 'Days left', 'Actions']}>
+            {paged.map((item) => (
+              <tr key={item.id} className="hover:bg-muted/30">
+                <td className="px-4 py-3">
+                  <p className="font-medium">{item.name}</p>
+                  {item.company ? <p className="text-xs text-muted-foreground">{item.company}</p> : null}
+                </td>
+                <td className="px-4 py-3 capitalize">
+                  <Badge variant="secondary">{item.type}</Badge>
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(item.deletedAt)}</td>
+                <td className="px-4 py-3">{item.deletedBy}</td>
+                <td className="px-4 py-3">{item.originalLocation}</td>
+                <td className="px-4 py-3">{item.daysRemaining}</td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      className={tableActionIconSuccess}
+                      aria-label={`Restore ${item.name}`}
+                      title="Restore"
+                      onClick={() => setRestoreItem(item)}
+                    >
+                      <RotateCcw className="size-4" aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      className={tableActionIconDanger}
+                      aria-label={`Permanently delete ${item.name}`}
+                      title="Delete permanently"
+                      onClick={() => setPurgeItem(item)}
+                    >
+                      <Trash2 className="size-4" aria-hidden />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </DataTable>
+          <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
+        </>
       ) : null}
 
       <ConfirmDialog

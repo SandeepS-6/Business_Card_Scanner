@@ -1,21 +1,63 @@
+import { useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Building2, Cloud, Eye, Plug, RefreshCw } from 'lucide-react'
 import { PageHeader } from '@/components/shared/page-header'
-import { DataTable } from '@/components/shared/data-table'
+import { DataTable, Pagination, tableActionIconClass } from '@/components/shared/data-table'
+import { IntegrationsCatalog, type IntegrationCatalogItem } from '@/components/shared/integrations-catalog'
 import { SyncStatusBadge } from '@/components/shared/status-badges'
 import { ErrorState } from '@/components/shared/empty-state'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useApp } from '@/context/app-context'
+import { usePagedRows } from '@/hooks/use-page-size'
 import { crmService } from '@/services/api'
 import { formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
+import type { CrmIntegration } from '@/types'
+import type { ComponentType } from 'react'
 
-const LABELS: Record<string, string> = {
-  hubspot: 'HubSpot',
-  salesforce: 'Salesforce',
-  zoho: 'Zoho CRM',
-  rest: 'Generic REST API',
+const CRM_META: Record<
+  CrmIntegration['provider'],
+  { name: string; provider: string; description: string; icon: ComponentType<{ className?: string }> }
+> = {
+  hubspot: {
+    name: 'HubSpot',
+    provider: 'HubSpot Inc.',
+    description: 'CRM sync for contacts, companies, and deals.',
+    icon: Building2,
+  },
+  salesforce: {
+    name: 'Salesforce',
+    provider: 'Salesforce',
+    description: 'Enterprise CRM connector for lead and contact sync.',
+    icon: Cloud,
+  },
+  zoho: {
+    name: 'Zoho CRM',
+    provider: 'Zoho',
+    description: 'Contact and lead sync for Zoho CRM workspaces.',
+    icon: Building2,
+  },
+  rest: {
+    name: 'Generic REST API',
+    provider: 'Custom',
+    description: 'Push contacts and leads to any REST endpoint.',
+    icon: Plug,
+  },
+}
+
+function toCatalogItem(item: CrmIntegration): IntegrationCatalogItem {
+  const meta = CRM_META[item.provider]
+  return {
+    id: item.id,
+    name: meta.name,
+    provider: meta.provider,
+    description: meta.description,
+    category: 'CRM',
+    status: item.connected ? 'connected' : 'needs',
+    icon: meta.icon,
+    meta: item.connected
+      ? `Last sync ${item.lastSync ? formatDateTime(item.lastSync) : '—'} · ${item.recordsSynced} records`
+      : 'Not connected',
+  }
 }
 
 export function CrmIntegrationsPage() {
@@ -26,42 +68,27 @@ export function CrmIntegrationsPage() {
     enabled: !!organization,
   })
 
+  const items = useMemo(() => data.map(toCatalogItem), [data])
+  // SECURITY: CRM credentials must never be collected in the frontend. Backend required.
+  const openCms = () => window.open('http://localhost:5174/platform', '_blank', 'noopener,noreferrer')
+
   return (
-    <div>
-      <PageHeader
-        title="CRM Integrations"
-        description="BusinessCardScanner remains the source of truth. CRM is an external sync layer."
-      />
-      <div className="grid gap-4 md:grid-cols-2">
-        {data.map((item) => (
-          <Card key={item.id}>
-            <CardHeader>
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <CardTitle>{LABELS[item.provider]}</CardTitle>
-                  <CardDescription>
-                    {item.connected ? `Last sync ${item.lastSync ? formatDateTime(item.lastSync) : '—'}` : 'Not connected'}
-                  </CardDescription>
-                </div>
-                <Badge variant={item.connected ? 'success' : 'muted'}>{item.connected ? 'Connected' : 'Not Connected'}</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">{item.recordsSynced} records synced</p>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => toast.message('Configure (mock)')}>Configure</Button>
-                {item.connected ? (
-                  <Button size="sm" variant="destructive" onClick={() => toast.message('Disconnected (mock)')}>Disconnect</Button>
-                ) : (
-                  // SECURITY: CRM credentials must never be collected in the frontend. Backend required.
-                  <Button size="sm" onClick={() => toast.success('Connected (mock)')}>Connect</Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
+    <IntegrationsCatalog
+      title="CRM Integrations"
+      description="BusinessCardScanner remains the source of truth. CRM is an external sync layer."
+      items={items}
+      onAdd={openCms}
+      onManage={() => openCms()}
+      footnote={
+        <>
+          Credentials and connector settings are edited in the{' '}
+          <button type="button" className="font-medium text-primary hover:underline" onClick={openCms}>
+            CMS
+          </button>
+          .
+        </>
+      }
+    />
   )
 }
 
@@ -73,6 +100,7 @@ export function CrmSyncPage() {
     queryFn: () => crmService.syncStatus(organization!.id),
     enabled: !!organization,
   })
+  const { page, setPage, pageSize, paged, total } = usePagedRows(data)
 
   return (
     <div>
@@ -83,24 +111,54 @@ export function CrmSyncPage() {
         </div>
       ) : null}
       <DataTable columns={['Provider', 'Resource', 'Status', 'Updated', 'Actions']}>
-        {data.map((row) => (
-          <tr key={row.id}>
+        {paged.map((row) => (
+          <tr key={row.id} className="hover:bg-muted/30">
             <td className="px-4 py-3">{row.provider}</td>
             <td className="px-4 py-3">{row.resource}</td>
             <td className="px-4 py-3"><SyncStatusBadge status={row.status} /></td>
             <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(row.updatedAt)}</td>
             <td className="px-4 py-3">
-              <div className="flex gap-1">
+              <div className="flex items-center gap-1.5">
                 {(row.status === 'failed' || row.status === 'retrying') && (
-                  <Button size="sm" variant="outline" onClick={() => { toast.success('Retry queued'); void qc.invalidateQueries({ queryKey: ['crm-sync'] }) }}>Retry</Button>
+                  <button
+                    type="button"
+                    className={tableActionIconClass}
+                    aria-label="Retry sync"
+                    title="Retry"
+                    onClick={() => {
+                      toast.success('Retry queued')
+                      void qc.invalidateQueries({ queryKey: ['crm-sync'] })
+                    }}
+                  >
+                    <RefreshCw className="size-4" aria-hidden />
+                  </button>
                 )}
-                {row.error ? <Button size="sm" variant="ghost" onClick={() => toast.message(row.error!)}>View error</Button> : null}
-                <Button size="sm" variant="ghost" onClick={() => toast.message(JSON.stringify(row))}>View details</Button>
+                {row.error ? (
+                  <button
+                    type="button"
+                    className={tableActionIconClass}
+                    aria-label="View error"
+                    title="View error"
+                    onClick={() => toast.message(row.error!)}
+                  >
+                    <Eye className="size-4" aria-hidden />
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className={tableActionIconClass}
+                  aria-label="View details"
+                  title="View details"
+                  onClick={() => toast.message(JSON.stringify(row))}
+                >
+                  <Eye className="size-4" aria-hidden />
+                </button>
               </div>
             </td>
           </tr>
         ))}
       </DataTable>
+      <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
     </div>
   )
 }

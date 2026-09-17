@@ -11,12 +11,13 @@ import {
   useDraggable,
 } from '@dnd-kit/core'
 import { PageHeader } from '@/components/shared/page-header'
-import { DataTable } from '@/components/shared/data-table'
+import { DataTable, Pagination } from '@/components/shared/data-table'
 import { SearchField } from '@/components/shared/search-field'
 import { EmptyState } from '@/components/shared/empty-state'
 import { LeadIntentBadge, LeadStatusBadge } from '@/components/shared/status-badges'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useApp } from '@/context/app-context'
+import { usePagedRows } from '@/hooks/use-page-size'
 import { contactService, leadService, userService } from '@/services/api'
 import type { Lead, LeadStatus } from '@/types'
 import { formatDate } from '@/lib/utils'
@@ -41,6 +42,8 @@ export function LeadsPage() {
       return `${c?.fullName ?? ''} ${c?.company ?? ''} ${l.status} ${l.intent}`.toLowerCase().includes(query)
     })
   }, [rows, q, contacts])
+
+  const { page, setPage, pageSize, paged, total } = usePagedRows(visibleRows, q)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
@@ -90,7 +93,7 @@ export function LeadsPage() {
         </TabsContent>
         <TabsContent value="table">
           <DataTable columns={['Contact', 'Company', 'Event', 'Owner', 'Status', 'Intent', 'Last activity', 'Next follow-up']}>
-            {visibleRows.map((l) => {
+            {paged.map((l) => {
               const c = contacts.find((x) => x.id === l.contactId)
               const owner = userService.get(l.ownerId)
               return (
@@ -111,6 +114,7 @@ export function LeadsPage() {
               )
             })}
           </DataTable>
+          <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
         </TabsContent>
       </Tabs>
     </div>

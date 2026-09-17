@@ -3,8 +3,9 @@ import { orgService } from '@/services/api'
 import { mockAuth } from '@/security/mock-auth'
 import { secureStorage } from '@/security/storage'
 import { queryClient } from '@/lib/query-client'
+import { useAppSelector } from '@/store/hooks'
 import type { AuthStatus, SessionUser } from '@/security/auth-types'
-import type { Branding, Event, Organization, ThemeMode } from '@/types'
+import type { Branding, Event, Organization } from '@/types'
 import { toUserErrorMessage } from '@/security/api-errors'
 
 interface AppState {
@@ -15,7 +16,6 @@ interface AppState {
   organization: Organization | null
   organizations: Organization[]
   selectedEventId: string | null
-  themeMode: ThemeMode
   offline: boolean
   sidebarCollapsed: boolean
   mobileNavOpen: boolean
@@ -27,7 +27,6 @@ interface AppState {
   setOrganizationId: (id: string) => Promise<void>
   updateBranding: (branding: Partial<Branding>) => Promise<void>
   setSelectedEventId: (id: string | null) => void
-  setThemeMode: (mode: ThemeMode) => void
   setOffline: (v: boolean) => void
   setSidebarCollapsed: (v: boolean) => void
   setMobileNavOpen: (v: boolean) => void
@@ -35,11 +34,10 @@ interface AppState {
 
 const AppContext = createContext<AppState | null>(null)
 
-function applyBranding(branding: Branding, mode: ThemeMode) {
+/** Brand CSS vars only — light/dark class is owned by Redux ThemeSync. */
+function applyBranding(branding: Branding) {
   const root = document.documentElement
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-  const dark = mode === 'dark' || (mode === 'system' && prefersDark)
-  root.classList.toggle('dark', dark)
+  const dark = root.classList.contains('dark')
   root.style.setProperty('--primary', branding.primaryColor)
   root.style.setProperty('--ring', branding.primaryColor)
   root.style.setProperty('--radius', branding.borderRadius)
@@ -47,6 +45,10 @@ function applyBranding(branding: Branding, mode: ThemeMode) {
     root.style.setProperty('--background', branding.backgroundColor)
     root.style.setProperty('--foreground', branding.textColor)
     root.style.setProperty('--accent', branding.accentColor)
+  } else {
+    root.style.removeProperty('--background')
+    root.style.removeProperty('--foreground')
+    root.style.removeProperty('--accent')
   }
 }
 
@@ -57,11 +59,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [organization, setOrganization] = useState<Organization | null>(null)
   const [selectedEventId, setSelectedEventId] = useState<string | null>('evt-tech-expo')
-  const [themeMode, setThemeMode] = useState<ThemeMode>('light')
   const [offline, setOffline] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
+  const theme = useAppSelector((s) => s.theme.theme)
 
   useEffect(() => {
     const session = secureStorage.readSession()
@@ -69,7 +71,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setAuthStatus('UNAUTHENTICATED')
       return
     }
-    if (session.themeMode) setThemeMode(session.themeMode)
     setUser(session.user)
     setMockSessionId(session.mockSessionId)
     void orgService
@@ -92,15 +93,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    if (organization) applyBranding(organization.branding, themeMode)
-  }, [organization, themeMode])
+    if (organization) applyBranding(organization.branding)
+  }, [organization, theme])
 
-  const persist = useCallback(
-    (next: { user: SessionUser; mockSessionId: string; orgId?: string; themeMode?: ThemeMode }) => {
-      secureStorage.writeSession(next)
-    },
-    [],
-  )
+  const persist = useCallback((next: { user: SessionUser; mockSessionId: string; orgId?: string }) => {
+    secureStorage.writeSession(next)
+  }, [])
 
   const login = useCallback(
     async (email: string, password: string, remember = true) => {
@@ -116,7 +114,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setOrganization(org)
         setAuthStatus('AUTHENTICATED')
         if (remember) {
-          persist({ user: res.user, mockSessionId: res.mockSessionId, orgId: org?.id, themeMode })
+          persist({ user: res.user, mockSessionId: res.mockSessionId, orgId: org?.id })
         } else {
           secureStorage.clearSession()
         }
@@ -126,7 +124,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         throw e
       }
     },
-    [persist, themeMode],
+    [persist],
   )
 
   const logout = useCallback(() => {
@@ -164,9 +162,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!org) return
       setOrganization(org)
       queryClient.clear()
-      if (user && mockSessionId) persist({ user, mockSessionId, orgId: id, themeMode })
+      if (user && mockSessionId) persist({ user, mockSessionId, orgId: id })
     },
-    [persist, themeMode, mockSessionId, user],
+    [persist, mockSessionId, user],
   )
 
   const updateBranding = useCallback(
@@ -187,7 +185,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       organization,
       organizations,
       selectedEventId,
-      themeMode,
       offline,
       sidebarCollapsed,
       mobileNavOpen,
@@ -199,10 +196,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setOrganizationId,
       updateBranding,
       setSelectedEventId,
-      setThemeMode: (mode) => {
-        setThemeMode(mode)
-        if (user && mockSessionId) persist({ user, mockSessionId, orgId: organization?.id, themeMode: mode })
-      },
       setOffline,
       setSidebarCollapsed,
       setMobileNavOpen,
@@ -214,7 +207,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       organization,
       organizations,
       selectedEventId,
-      themeMode,
       offline,
       sidebarCollapsed,
       mobileNavOpen,
@@ -225,7 +217,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       acknowledgeSessionExpired,
       setOrganizationId,
       updateBranding,
-      persist,
     ],
   )
 

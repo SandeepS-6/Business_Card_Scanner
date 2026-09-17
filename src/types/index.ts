@@ -10,7 +10,7 @@ export type QueueStatus = 'pending' | 'uploading' | 'processing' | 'review_requi
 export type SyncStatus = 'synced' | 'pending' | 'failed' | 'retrying'
 export type HealthStatus = 'operational' | 'degraded' | 'down'
 export type TemplateKind = 'global' | 'organization'
-export type ThemeMode = 'light' | 'dark' | 'system'
+export type ThemeMode = 'light' | 'dark'
 export type FieldType = 'text' | 'number' | 'dropdown' | 'multi_select' | 'date' | 'checkbox'
 export type NotificationType =
   | 'system'
@@ -298,6 +298,24 @@ export interface OcrResult {
   }
   imageUrl: string
   backImageUrl?: string
+}
+
+/** One card in a multi-scan session — review one-at-a-time, Save & next. */
+export type OcrBatchItemStatus = 'pending' | 'saved' | 'skipped'
+
+export interface OcrBatchItem {
+  id: string
+  result: OcrResult
+  status: OcrBatchItemStatus
+}
+
+export interface OcrBatch {
+  items: OcrBatchItem[]
+  index: number
+  orgId?: string
+  eventId?: string | null
+  savedCount: number
+  skippedCount: number
 }
 
 export interface SystemHealthItem {

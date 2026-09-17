@@ -1,9 +1,10 @@
-import type { ThemeMode } from '@/types'
 import type { SessionUser } from '@/security/auth-types'
+import type { OcrBatch } from '@/types'
 
 const SESSION_KEY = 'bcs-demo-session'
 const OCR_RESULT_KEY = 'bcs-ocr-result'
 const OCR_META_KEY = 'bcs-ocr-meta'
+const OCR_BATCH_KEY = 'bcs-ocr-batch'
 const INSTALL_DISMISS_KEY = 'bcs-install-dismissed'
 
 export type PersistedSession = {
@@ -11,7 +12,8 @@ export type PersistedSession = {
   /** Mock session marker only — never a real credential. */
   mockSessionId: string
   orgId?: string
-  themeMode?: ThemeMode
+  /** @deprecated Migrated to bcs-theme; read-only for one-time hydrate. */
+  themeMode?: 'light' | 'dark' | 'system'
 }
 
 /** SECURITY: localStorage is not a secure vault. Persist only non-secret demo session UX state. */
@@ -36,7 +38,8 @@ export const secureStorage = {
   },
   writeSession(session: PersistedSession) {
     const { password: _pw, ...user } = session.user as SessionUser & { password?: string }
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ ...session, user }))
+    const { themeMode: _theme, ...rest } = session
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ ...rest, user }))
   },
   clearSession() {
     localStorage.removeItem(SESSION_KEY)
@@ -53,9 +56,35 @@ export const secureStorage = {
     sessionStorage.removeItem(OCR_RESULT_KEY)
     sessionStorage.removeItem(OCR_META_KEY)
   },
+  setOcrBatch(batch: OcrBatch) {
+    // SECURITY: batch OCR may contain PII — clear on logout; backend must authorize.
+    sessionStorage.setItem(OCR_BATCH_KEY, JSON.stringify(batch))
+    const current = batch.items[batch.index]
+    if (current) {
+      sessionStorage.setItem(OCR_RESULT_KEY, JSON.stringify(current.result))
+      sessionStorage.setItem(
+        OCR_META_KEY,
+        JSON.stringify({ orgId: batch.orgId, eventId: batch.eventId, batch: true, index: batch.index }),
+      )
+    }
+  },
+  getOcrBatch(): OcrBatch | null {
+    try {
+      const raw = sessionStorage.getItem(OCR_BATCH_KEY)
+      if (!raw) return null
+      return JSON.parse(raw) as OcrBatch
+    } catch {
+      sessionStorage.removeItem(OCR_BATCH_KEY)
+      return null
+    }
+  },
+  clearOcrBatch() {
+    sessionStorage.removeItem(OCR_BATCH_KEY)
+  },
   clearAuthArtifacts() {
     this.clearSession()
     this.clearOcrDraft()
+    this.clearOcrBatch()
   },
   installDismissed: {
     get: () => localStorage.getItem(INSTALL_DISMISS_KEY) === '1',

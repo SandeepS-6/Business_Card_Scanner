@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { ClipboardList, Contact, ScanLine, Sparkles, Target, Users } from 'lucide-react'
 import { PageHeader } from '@/components/shared/page-header'
+import { MetricCard } from '@/components/shared/metric-card'
 import { AppChart } from '@/components/charts/app-chart'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -58,13 +60,12 @@ export function CommandCenterPage() {
   }, [paused, organization, qc])
 
   const metrics = [
-    { label: 'Cards scanned', value: kpis?.cardsScanned ?? '—' },
-    { label: 'Contacts captured', value: kpis?.contacts ?? '—' },
-    { label: 'Leads generated', value: kpis?.leads ?? '—' },
-    { label: 'Qualified leads', value: kpis?.qualified ?? '—' },
-    { label: 'Follow-ups created', value: kpis?.followUps ?? '—' },
-    { label: 'Team active', value: kpis?.teamActive ?? '—' },
-    { label: 'Sync status', value: kpis?.sync ?? '—' },
+    { label: 'Cards scanned', value: kpis?.cardsScanned ?? '—', icon: ScanLine, change: 12 },
+    { label: 'Contacts captured', value: kpis?.contacts ?? '—', icon: Contact, change: 8 },
+    { label: 'Leads generated', value: kpis?.leads ?? '—', icon: Target, change: 10 },
+    { label: 'Qualified leads', value: kpis?.qualified ?? '—', icon: Sparkles, change: 6 },
+    { label: 'Follow-ups created', value: kpis?.followUps ?? '—', icon: ClipboardList, change: 5 },
+    { label: 'Team active', value: kpis?.teamActive ?? '—', icon: Users, change: 2 },
   ]
 
   return (
@@ -106,12 +107,15 @@ export function CommandCenterPage() {
         }
       />
 
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {metrics.map((m) => (
-          <Card key={m.label} className="p-4">
-            <p className="text-xs text-muted-foreground">{m.label}</p>
-            <p className="mt-1 font-display text-2xl font-semibold tabular-nums capitalize">{m.value}</p>
-          </Card>
+          <MetricCard
+            key={m.label}
+            label={m.label}
+            value={m.value}
+            icon={m.icon}
+            change={m.change}
+          />
         ))}
       </div>
 
@@ -163,7 +167,7 @@ export function CommandCenterPage() {
           title="Cards scanned over time"
           kind="area"
           categoryKey="hour"
-          series={[{ key: 'scans', label: 'Scans' }]}
+          series={[{ key: 'scans', label: 'Cards scanned' }]}
           rows={[
             { hour: '09:00', scans: 12 },
             { hour: '10:00', scans: 28 },
@@ -172,6 +176,7 @@ export function CommandCenterPage() {
             { hour: '13:00', scans: 52 },
             { hour: '14:00', scans: 61 },
           ]}
+          height={180}
           canExport={canExport}
         />
         <AppChart
@@ -179,7 +184,7 @@ export function CommandCenterPage() {
           title="Leads generated"
           kind="bar"
           categoryKey="hour"
-          series={[{ key: 'leads', label: 'Leads' }]}
+          series={[{ key: 'leads', label: 'Leads generated' }]}
           rows={[
             { hour: '09:00', leads: 4 },
             { hour: '10:00', leads: 11 },
@@ -188,6 +193,7 @@ export function CommandCenterPage() {
             { hour: '13:00', leads: 22 },
             { hour: '14:00', leads: 27 },
           ]}
+          height={180}
           canExport={canExport}
         />
         <AppChart
@@ -196,10 +202,11 @@ export function CommandCenterPage() {
           kind="bar"
           categoryKey="name"
           series={[
-            { key: 'cards', label: 'Cards' },
-            { key: 'leads', label: 'Leads' },
+            { key: 'cards', label: 'Cards scanned' },
+            { key: 'leads', label: 'Leads generated' },
           ]}
           rows={team.map((p) => ({ name: p.name.split(' ')[0], cards: p.cardsScanned, leads: p.leadsGenerated }))}
+          height={180}
           canExport={canExport}
         />
         <AppChart
@@ -207,13 +214,14 @@ export function CommandCenterPage() {
           title="Lead status mix"
           kind="doughnut"
           categoryKey="status"
-          series={[{ key: 'count', label: 'Count' }]}
+          series={[{ key: 'count', label: 'Leads' }]}
           rows={[
             { status: 'New', count: 40 },
             { status: 'Qualified', count: 74 },
             { status: 'Interested', count: 28 },
             { status: 'Lost', count: 12 },
           ]}
+          height={200}
           canExport={canExport}
         />
       </div>

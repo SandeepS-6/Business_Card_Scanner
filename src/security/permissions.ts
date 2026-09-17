@@ -37,7 +37,13 @@ export type Permission =
   | 'VENUE_VIEW'
   | 'PRESENCE_VIEW'
   | 'SYNC_CENTER_VIEW'
+  /** Open / reply on support tickets (all org users). */
   | 'TICKETS_VIEW'
+  /**
+   * Assign tickets, change status/priority, post internal notes.
+   * Built-in: org_admin (+ super_admin). Not granted to plain user.
+   * Custom role presets (Manage Team) may include this when backend roles ship.
+   */
   | 'TICKETS_MANAGE'
   | 'BILLING_VIEW'
   | 'BILLING_MANAGE'
@@ -154,6 +160,8 @@ export function hasRole(role: Role | null | undefined, allowed: Role[]): boolean
 /** Legacy area helper used by sidebar — prefer `can()`. */
 export function canAccessArea(role: Role, area: string): boolean {
   if (role === 'super_admin') return true
+  // Platform Integrations is available to org admins as well as super admins.
+  if (area === 'platform.integrations') return role === 'org_admin'
   if (area.startsWith('platform.')) return false
   if (role === 'org_admin') return true
   const map: Record<string, Permission> = {

@@ -1,43 +1,62 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArrowLeftRight, Check, CloudDownload, FileText, Filter, Info } from 'lucide-react'
 import { PageHeader } from '@/components/shared/page-header'
-import { DataTable } from '@/components/shared/data-table'
+import { DataTable, Pagination, tableActionIconClass } from '@/components/shared/data-table'
+import { SearchField } from '@/components/shared/search-field'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
-import { AppChart } from '@/components/charts/app-chart'
+import { EmptyState } from '@/components/shared/empty-state'
+import { StatusDot } from '@/components/shared/status-badges'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useApp } from '@/context/app-context'
+import { usePagedRows } from '@/hooks/use-page-size'
 import { can } from '@/security/permissions'
 import { billingService } from '@/services/features-api'
-import type { PlanId } from '@/types/features'
+import { cn, formatDate } from '@/lib/utils'
+import type { Plan, PlanId } from '@/types/features'
 import { toast } from 'sonner'
 
-function UsageMeter({ label, used, max }: { label: string; used: number; max: number }) {
-  const pct = Math.min(100, Math.round((used / max) * 100))
-  return (
-    <div>
-      <div className="mb-1 flex justify-between text-sm">
-        <span>{label}</span>
-        <span className="tabular-nums text-muted-foreground">
-          {used.toLocaleString()} / {max.toLocaleString()}
-        </span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-muted" role="meter" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
-        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  )
+function planSummary(p: Plan) {
+  if (p.id === 'enterprise') return 'Unlimited seats and card scans'
+  return `Includes up to ${p.users} users`
+}
+
+function planFeatures(p: Plan): string[] {
+  if (p.id === 'enterprise') {
+    return ['Unlimited users', 'Unlimited card scans', 'Unlimited events', `${p.support} support`, 'CRM sync included']
+  }
+  return [
+    `Up to ${p.users} users`,
+    `${p.cardsMonth.toLocaleString()} card scans / month`,
+    `${p.events} events`,
+    `${p.support} support`,
+    p.crm ? 'CRM sync included' : 'CRM sync not included',
+  ]
+}
+
+function invoiceLabel(planName: string, date: string) {
+  const d = new Date(date)
+  const month = d.toLocaleString('en-US', { month: 'short' })
+  const year = d.getFullYear()
+  return `${planName} Plan – ${month} ${year}`
 }
 
 export function BillingPage() {
   const { organization, user } = useApp()
   const qc = useQueryClient()
   const canManage = can(user?.role, 'BILLING_MANAGE')
-  const canExport = can(user?.role, 'BILLING_VIEW')
-  const [upgradeStep, setUpgradeStep] = useState(0)
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null)
   const [downgradeOpen, setDowngradeOpen] = useState(false)
+  const [q, setQ] = useState('')
+  const [selected, setSelected] = useState<string[]>([])
 
   const { data: plans = [] } = useQuery({ queryKey: ['plans'], queryFn: () => billingService.plans() })
   const { data: current } = useQuery({
@@ -50,252 +69,288 @@ export function BillingPage() {
     queryFn: () => billingService.invoices(organization!.id),
     enabled: !!organization,
   })
-  const { data: txns = [] } = useQuery({
-    queryKey: ['billing-txns', organization?.id],
-    queryFn: () => billingService.transactions(organization!.id),
-    enabled: !!organization,
-  })
 
   const plan = useMemo(() => plans.find((p) => p.id === current?.planId), [plans, current])
+
+  const filteredInvoices = useMemo(() => {
+    const query = q.trim().toLowerCase()
+    if (!query) return invoices
+    return invoices.filter((inv) => {
+      const label = invoiceLabel(plan?.name ?? 'Plan', inv.date).toLowerCase()
+      return label.includes(query) || inv.number.toLowerCase().includes(query) || String(inv.amount).includes(query)
+    })
+  }, [invoices, q, plan?.name])
+
+  const { page, setPage, pageSize, paged: pageInvoices, total: invoiceTotal } = usePagedRows(filteredInvoices, q)
+
+  const allSelected = pageInvoices.length > 0 && pageInvoices.every((i) => selected.includes(i.id))
 
   const setPlan = useMutation({
     mutationFn: (planId: PlanId) => billingService.setPlan(organization!.id, planId),
     onSuccess: () => {
       toast.success('Plan updated (mock)')
-      setUpgradeStep(0)
       setSelectedPlan(null)
       void qc.invalidateQueries({ queryKey: ['org-plan'] })
     },
   })
 
+  const requestSwitch = (target: PlanId) => {
+    if (!canManage || !plan) return
+    if (target === plan.id) return
+    setSelectedPlan(target)
+    const targetIdx = plans.findIndex((p) => p.id === target)
+    const currentIdx = plans.findIndex((p) => p.id === plan.id)
+    if (targetIdx < currentIdx) {
+      setDowngradeOpen(true)
+      return
+    }
+    void setPlan.mutateAsync(target)
+  }
+
   return (
     <div>
       <PageHeader
         title="Plans & Billing"
-        description="Subscription, usage, and invoices. Payment fields are placeholders — never enter real card data."
+        description="Manage your plan and billing history here."
       />
 
-      <Card className="mb-6 p-5">
-        <h2 className="font-display text-lg font-semibold">Enterprise billing</h2>
-        <p className="mt-1 text-sm text-muted-foreground">UI for postpaid / usage-based contracts — not wired to payments.</p>
-        <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-          <li>Billing model: Postpaid + usage overage</li>
-          <li>Contract: NET-30 · MSA-2026-NEXUS</li>
-          <li>Billing contact: finance@nexus-events.example</li>
-          <li>Invoice terms: Electronic PDF · ACH preferred</li>
-        </ul>
-      </Card>
-
-      {plan && current ? (
-        <Card className="mb-6 p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-sm text-muted-foreground">Current plan</p>
-              <p className="font-display text-2xl font-semibold">{plan.name}</p>
-              <p className="text-sm text-muted-foreground">
-                {plan.id === 'enterprise' ? 'Custom pricing' : `$${plan.priceMonthly}/month`} · Next billing{' '}
-                {current.nextBilling}
-              </p>
-            </div>
-            {canManage ? (
-              <Button
-                onClick={() => {
-                  setUpgradeStep(1)
-                  setSelectedPlan(null)
-                }}
-              >
-                Change plan
-              </Button>
-            ) : null}
-          </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <UsageMeter label="Cards" used={current.usage.cards} max={plan.cardsMonth} />
-            <UsageMeter label="Storage (GB)" used={current.usage.storage} max={plan.storageGb} />
-            <UsageMeter label="Users" used={current.usage.users} max={plan.users} />
-          </div>
-        </Card>
-      ) : null}
-
-      {upgradeStep > 0 ? (
-        <Card className="mb-6 space-y-4 p-5">
-          <p className="font-semibold">
-            {upgradeStep === 1
-              ? 'Select plan'
-              : upgradeStep === 2
-                ? 'Compare features'
-                : upgradeStep === 3
-                  ? 'Review'
-                  : upgradeStep === 4
-                    ? 'Payment placeholder'
-                    : 'Success'}
-          </p>
-          {upgradeStep === 1 ? (
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              {plans.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  className={`rounded-lg border p-4 text-left ${selectedPlan === p.id ? 'border-primary ring-2 ring-primary/30' : 'border-border'}`}
-                  onClick={() => setSelectedPlan(p.id)}
+      <div className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {plans.map((p) => {
+          const isCurrent = current?.planId === p.id
+          return (
+            <div
+              key={p.id}
+              className={cn(
+                'relative flex flex-col rounded-xl border p-5 transition',
+                isCurrent ? 'border-primary/40 bg-primary/5' : 'border-border bg-card',
+              )}
+            >
+              <div className="mb-3 flex items-start justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">{p.name}</p>
+                  <Info className="size-3.5 text-muted-foreground" aria-hidden />
+                </div>
+                <span
+                  className={cn(
+                    'inline-flex size-5 shrink-0 items-center justify-center rounded-full border',
+                    isCurrent ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30 bg-transparent',
+                  )}
+                  aria-hidden
                 >
-                  <p className="font-display text-lg font-semibold">{p.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {p.id === 'enterprise' ? 'Contact sales' : `$${p.priceMonthly}/mo`}
-                  </p>
-                  <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-                    <li>{p.users} users</li>
-                    <li>{p.cardsMonth.toLocaleString()} cards/mo</li>
-                    <li>{p.events} events</li>
-                    <li>{p.support} support</li>
-                  </ul>
-                </button>
-              ))}
+                  {isCurrent ? <Check className="size-3" strokeWidth={3} /> : null}
+                </span>
+              </div>
+              <p className="font-display text-3xl font-semibold tracking-tight">
+                {p.id === 'enterprise' ? (
+                  'Custom'
+                ) : (
+                  <>
+                    ${p.priceMonthly}
+                    <span className="text-base font-medium text-muted-foreground">/mth</span>
+                  </>
+                )}
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">{planSummary(p)}</p>
+              <ul className="mt-4 flex-1 space-y-2.5">
+                {planFeatures(p).map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm">
+                    <span className="mt-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                      <Check className="size-2.5" strokeWidth={3} />
+                    </span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              {canManage ? (
+                <Button
+                  className="mt-5 w-full"
+                  variant={isCurrent ? 'outline' : 'default'}
+                  disabled={isCurrent || setPlan.isPending}
+                  onClick={() => requestSwitch(p.id)}
+                >
+                  {isCurrent ? (
+                    'Current plan'
+                  ) : (
+                    <>
+                      <ArrowLeftRight className="size-4" />
+                      Switch plan
+                    </>
+                  )}
+                </Button>
+              ) : isCurrent ? (
+                <p className="mt-5 text-center text-sm font-medium text-muted-foreground">Current plan</p>
+              ) : null}
             </div>
-          ) : null}
-          {upgradeStep === 2 && selectedPlan ? (
-            <p className="text-sm text-muted-foreground">
-              Comparing {plan?.name} → {plans.find((p) => p.id === selectedPlan)?.name}. Feature deltas are illustrative.
-            </p>
-          ) : null}
-          {upgradeStep === 3 ? (
-            <p className="text-sm">Effective immediately in this mock. No charge will be processed.</p>
-          ) : null}
-          {upgradeStep === 4 ? (
-            <div className="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">
-              Payment form placeholder. Do not enter real payment credentials. Backend + PCI-compliant processor required later.
-            </div>
-          ) : null}
-          {upgradeStep === 5 ? <p className="text-sm text-emerald-700 dark:text-emerald-400">Plan change applied in mock state.</p> : null}
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => setUpgradeStep(0)}>
-              Cancel
-            </Button>
-            {upgradeStep < 5 ? (
-              <Button
-                disabled={upgradeStep === 1 && !selectedPlan}
-                onClick={() => {
-                  if (upgradeStep === 4 && selectedPlan) {
-                    void setPlan.mutateAsync(selectedPlan).then(() => setUpgradeStep(5))
-                    return
-                  }
-                  if (
-                    upgradeStep === 1 &&
-                    selectedPlan &&
-                    plan &&
-                    plans.findIndex((p) => p.id === selectedPlan) < plans.findIndex((p) => p.id === plan.id)
-                  ) {
-                    setDowngradeOpen(true)
-                    return
-                  }
-                  setUpgradeStep((s) => s + 1)
-                }}
-              >
-                Continue
-              </Button>
-            ) : (
-              <Button onClick={() => setUpgradeStep(0)}>Done</Button>
-            )}
-          </div>
-        </Card>
-      ) : null}
-
-      <div className="mb-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        {plans.map((p) => (
-          <Card key={p.id} className="p-4">
-            <p className="font-display text-lg font-semibold">{p.name}</p>
-            <p className="text-sm text-muted-foreground">
-              {p.id === 'enterprise' ? 'Custom' : `$${p.priceMonthly}/mo`}
-            </p>
-            <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
-              <li>{p.users} users · {p.cardsMonth.toLocaleString()} cards</li>
-              <li>{p.storageGb} GB · OCR {p.ocr.toLocaleString()}</li>
-              <li>Email {p.email.toLocaleString()} · WhatsApp {p.whatsapp.toLocaleString()}</li>
-              <li>CRM: {p.crm ? 'Yes' : 'No'} · {p.support}</li>
-            </ul>
-          </Card>
-        ))}
+          )
+        })}
       </div>
 
-      {current ? (
-        <div className="mb-6 grid gap-4 lg:grid-cols-2">
-          <AppChart
-            id="billing-cards"
-            title="Card usage"
-            kind="line"
-            categoryKey="m"
-            series={[{ key: 'v', label: 'Cards' }]}
-            rows={[
-              { m: 'Jun', v: 4200 },
-              { m: 'Jul', v: 6100 },
-              { m: 'Aug', v: 7400 },
-              { m: 'Sep', v: current.usage.cards },
-            ]}
-            canExport={canExport}
-          />
-          <AppChart
-            id="billing-channels"
-            title="Channel usage"
-            kind="bar"
-            categoryKey="channel"
-            series={[{ key: 'used', label: 'Used' }]}
-            rows={[
-              { channel: 'OCR', used: current.usage.ocr },
-              { channel: 'Email', used: current.usage.email },
-              { channel: 'WhatsApp', used: current.usage.whatsapp },
-              { channel: 'Storage', used: current.usage.storage },
-            ]}
-            canExport={canExport}
-          />
+      {current && plan ? (
+        <div className="mb-8 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-lg border border-border bg-card px-4 py-3">
+            <p className="text-xs text-muted-foreground">Card scans this period</p>
+            <p className="mt-1 text-sm font-semibold tabular-nums">
+              {current.usage.cards.toLocaleString()} / {plan.id === 'enterprise' ? '∞' : plan.cardsMonth.toLocaleString()}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-card px-4 py-3">
+            <p className="text-xs text-muted-foreground">Users</p>
+            <p className="mt-1 text-sm font-semibold tabular-nums">
+              {current.usage.users} / {plan.id === 'enterprise' ? '∞' : plan.users}
+            </p>
+          </div>
         </div>
       ) : null}
 
-      <h2 className="mb-3 font-display text-lg font-semibold">Invoices</h2>
-      <DataTable columns={['Invoice', 'Date', 'Amount', 'Status', 'Actions']}>
-        {invoices.map((inv) => (
-          <tr key={inv.id}>
-            <td className="px-4 py-3 font-medium">{inv.number}</td>
-            <td className="px-4 py-3">{inv.date}</td>
-            <td className="px-4 py-3">${inv.amount}</td>
-            <td className="px-4 py-3">
-              <Badge variant={inv.status === 'paid' ? 'success' : inv.status === 'failed' ? 'danger' : 'warning'}>
-                {inv.status}
-              </Badge>
-            </td>
-            <td className="px-4 py-3">
-              <Button size="sm" variant="outline" onClick={() => toast.message(`View ${inv.number} (mock PDF)`)}>
-                View
-              </Button>{' '}
-              <Button size="sm" variant="ghost" onClick={() => toast.success('Download started (mock)')}>
-                Download
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-baseline gap-2">
+          <h2 className="font-display text-base font-semibold">Billing history</h2>
+          <span className="text-sm text-muted-foreground">{invoiceTotal}</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <SearchField value={q} onChange={setQ} placeholder="Search invoices" className="sm:max-w-[200px]" />
+          <Button size="sm" variant="outline" onClick={() => toast.message('Filters (mock)')}>
+            <Filter className="size-4" />
+            Filter
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline" type="button">
+                <CloudDownload className="size-4" />
+                Download{selected.length > 0 ? ` (${selected.length})` : ' all'}
               </Button>
-            </td>
-          </tr>
-        ))}
-      </DataTable>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() =>
+                  toast.success(
+                    selected.length > 0
+                      ? `Download CSV for ${selected.length} invoices (mock)`
+                      : 'Download all as CSV (mock)',
+                  )
+                }
+              >
+                <CloudDownload className="size-4" aria-hidden />
+                Download CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  toast.success(
+                    selected.length > 0
+                      ? `Download PDF for ${selected.length} invoices (mock)`
+                      : 'Download all as PDF (mock)',
+                  )
+                }
+              >
+                <CloudDownload className="size-4" aria-hidden />
+                Download PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
 
-      <h2 className="mb-3 mt-8 font-display text-lg font-semibold">Transactions</h2>
-      <DataTable columns={['Date', 'Description', 'Amount', 'Status', 'Method']}>
-        {txns.map((t) => (
-          <tr key={t.id}>
-            <td className="px-4 py-3">{t.date}</td>
-            <td className="px-4 py-3">{t.description}</td>
-            <td className="px-4 py-3">${t.amount}</td>
-            <td className="px-4 py-3 capitalize">{t.status}</td>
-            <td className="px-4 py-3">{t.method}</td>
-          </tr>
-        ))}
-      </DataTable>
+      {invoiceTotal === 0 ? (
+        <EmptyState title="No invoices" description="Billing history will appear here after your first invoice." />
+      ) : (
+        <>
+          <DataTable
+            columns={[
+              <Checkbox
+                key="all"
+                checked={allSelected}
+                onCheckedChange={(v) =>
+                  setSelected(v ? pageInvoices.map((i) => i.id) : selected.filter((id) => !pageInvoices.some((i) => i.id === id)))
+                }
+                aria-label="Select all invoices"
+              />,
+              'Invoice',
+              'Amount',
+              'Date',
+              'Status',
+              'Plan',
+              '',
+            ]}
+          >
+            {pageInvoices.map((inv) => {
+              const label = invoiceLabel(plan?.name ?? 'Plan', inv.date)
+              return (
+                <tr key={inv.id} className="hover:bg-muted/30">
+                  <td className="px-4 py-3">
+                    <Checkbox
+                      checked={selected.includes(inv.id)}
+                      onCheckedChange={(v) => setSelected((s) => (v ? [...s, inv.id] : s.filter((id) => id !== inv.id)))}
+                      aria-label={`Select ${inv.number}`}
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex size-8 shrink-0 items-center justify-center rounded bg-foreground text-background">
+                        <FileText className="size-4" aria-hidden />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{label}</p>
+                        <p className="truncate text-xs text-muted-foreground">{inv.number}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 tabular-nums">USD ${inv.amount.toFixed(2)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{formatDate(inv.date)}</td>
+                  <td className="px-4 py-3">
+                    <Badge
+                      variant={inv.status === 'paid' ? 'success' : inv.status === 'failed' ? 'danger' : 'warning'}
+                      className="gap-1 capitalize"
+                    >
+                      {inv.status === 'paid' ? <Check className="size-3" aria-hidden /> : null}
+                      {inv.status}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2 py-0.5 text-xs font-medium">
+                      <StatusDot tone={inv.status === 'paid' ? 'success' : inv.status === 'failed' ? 'danger' : 'warning'} />
+                      {plan?.name ?? '—'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className={tableActionIconClass}
+                          aria-label={`Download ${inv.number}`}
+                          title="Download"
+                        >
+                          <CloudDownload className="size-4" aria-hidden />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => toast.success(`Download ${inv.number} as CSV (mock)`)}>
+                          Download CSV
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => toast.success(`Download ${inv.number} as PDF (mock)`)}>
+                          Download PDF
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
+                </tr>
+              )
+            })}
+          </DataTable>
+          <Pagination page={page} pageSize={pageSize} total={invoiceTotal} onChange={setPage} />
+        </>
+      )}
 
       <ConfirmDialog
         open={downgradeOpen}
         onOpenChange={setDowngradeOpen}
         title="Downgrade plan?"
-        description={`You will lose higher quotas from ${plan?.name}. Change is effective next billing date in a real system; mock applies immediately after payment step.`}
+        description={`You will lose higher quotas from ${plan?.name}. Change is applied immediately in this mock.`}
         confirmLabel="Continue downgrade"
         destructive
         onConfirm={() => {
           setDowngradeOpen(false)
-          setUpgradeStep(2)
+          if (selectedPlan) void setPlan.mutateAsync(selectedPlan)
         }}
       />
     </div>

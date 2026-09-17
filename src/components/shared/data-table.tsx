@@ -4,6 +4,16 @@ import { cn } from '@/lib/utils'
 
 export type SortDir = 'asc' | 'desc'
 
+/** Icon-only row actions. Light fill by default; hover goes to the action color. */
+export const tableActionIconClass =
+  'inline-flex size-8 items-center justify-center rounded-md bg-muted/50 text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
+
+export const tableActionIconSuccess =
+  'inline-flex size-8 items-center justify-center rounded-md bg-emerald-100 text-emerald-700 transition hover:bg-emerald-600 hover:text-white dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-600 dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
+
+export const tableActionIconDanger =
+  'inline-flex size-8 items-center justify-center rounded-md bg-red-100 text-red-700 transition hover:bg-destructive hover:text-white dark:bg-red-950 dark:text-red-300 dark:hover:bg-destructive dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
+
 export function DataTable({
   columns,
   children,
@@ -16,10 +26,10 @@ export function DataTable({
   return (
     <div className={cn('scrollbar-none overflow-x-auto rounded-lg border border-border bg-card', className)}>
       <table className="w-full min-w-[640px] text-left text-sm">
-        <thead className="border-b border-border bg-muted/50">
+        <thead className="border-b border-primary bg-primary">
           <tr>
             {columns.map((col, i) => (
-              <th key={i} className="px-4 py-3 font-medium text-muted-foreground">
+              <th key={i} className="px-4 py-3 font-medium text-primary-foreground">
                 {col}
               </th>
             ))}
@@ -47,7 +57,7 @@ export function SortButton({
   return (
     <button
       type="button"
-      className="inline-flex items-center gap-1 font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="inline-flex items-center gap-1 font-medium text-primary-foreground/90 hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
       onClick={onClick}
       aria-label={`Sort by ${label}${active && dir ? `, ${dir === 'asc' ? 'ascending' : 'descending'}` : ''}`}
     >

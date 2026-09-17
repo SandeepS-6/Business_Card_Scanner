@@ -40,11 +40,17 @@ function ContactRowActions({ contact }: { contact: Contact }) {
   const navigate = useNavigate()
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        aria-label={`Actions for ${contact.fullName}`}
-      >
-        <MoreVertical className="size-4" />
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground data-[state=open]:bg-muted data-[state=open]:text-foreground"
+          aria-label={`Actions for ${contact.fullName}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <MoreVertical className="size-4" />
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => navigate(`/contacts/${contact.id}`)}>Open</DropdownMenuItem>

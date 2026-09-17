@@ -1,6 +1,6 @@
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from '@/components/layout/app-shell'
-import { RequireAuth, RequirePermission } from '@/components/security/protected-route'
+import { RequireAuth, RequirePermission, RequireRoles } from '@/components/security/protected-route'
 import { UnauthorizedPage } from '@/components/security/unauthorized-page'
 import { SecurityErrorBoundary } from '@/components/security/security-error-boundary'
 import { SessionExpiredDialog } from '@/components/security/session-expired-dialog'
@@ -34,8 +34,8 @@ import {
   PlatformOrganizationsPage,
   PlatformOrgDetailPage,
   PlatformUsersPage,
+  PlatformUserDetailPage,
   PlatformUsagePage,
-  SystemHealthPage,
   PlatformIntegrationsPage,
 } from '@/pages/platform'
 
@@ -123,16 +123,19 @@ export function AppRouter() {
             <Route element={<RequirePermission permission="SETTINGS_VIEW" />}>
               <Route path="settings" element={<SettingsPage />} />
             </Route>
+            <Route element={<RequireRoles roles={['org_admin', 'super_admin']} />}>
+              <Route path="platform/integrations" element={<PlatformIntegrationsPage />} />
+            </Route>
             {/* SECURITY: Backend authorization required for all platform operations. */}
             <Route element={<RequirePermission permission="SUPER_ADMIN_ACCESS" />}>
               <Route path="platform/organizations" element={<PlatformOrganizationsPage />} />
               <Route path="platform/organizations/:id" element={<PlatformOrgDetailPage />} />
               <Route path="platform/users" element={<PlatformUsersPage />} />
+              <Route path="platform/users/:id" element={<PlatformUserDetailPage />} />
               <Route path="platform/templates" element={<TemplatesPage globalOnly />} />
-              <Route path="platform/integrations" element={<PlatformIntegrationsPage />} />
               <Route path="platform/usage" element={<PlatformUsagePage />} />
-              <Route path="platform/health" element={<SystemHealthPage />} />
-              <Route path="platform/audit" element={<AuditLogsPage platform />} />
+              <Route path="platform/health" element={<Navigate to="/platform/organizations" replace />} />
+              <Route path="platform/audit" element={<Navigate to="/audit-logs" replace />} />
             </Route>
             <Route path="*" element={<NotFoundPage />} />
           </Route>

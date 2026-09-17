@@ -1,6 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { useApp } from '@/context/app-context'
-import { can, type Permission } from '@/security/permissions'
+import { can, hasRole, type Permission } from '@/security/permissions'
+import type { Role } from '@/types'
 import { UnauthorizedRedirect } from '@/components/security/unauthorized-page'
 
 export function RequireAuth() {
@@ -24,5 +25,11 @@ export function RequireAuth() {
 export function RequirePermission({ permission }: { permission: Permission }) {
   const { user } = useApp()
   if (!can(user?.role, permission)) return <UnauthorizedRedirect />
+  return <Outlet />
+}
+
+export function RequireRoles({ roles }: { roles: Role[] }) {
+  const { user } = useApp()
+  if (!hasRole(user?.role, roles)) return <UnauthorizedRedirect />
   return <Outlet />
 }

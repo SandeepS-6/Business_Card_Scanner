@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Ban, Pencil, Send, UserCog } from 'lucide-react'
 import { PageHeader } from '@/components/shared/page-header'
-import { DataTable } from '@/components/shared/data-table'
+import { DataTable, Pagination, tableActionIconClass, tableActionIconDanger } from '@/components/shared/data-table'
 import { SearchField } from '@/components/shared/search-field'
 import { can, type Permission } from '@/security/permissions'
 import { PermissionDenied } from '@/components/shared/empty-state'
@@ -12,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input, Label, Textarea } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useApp } from '@/context/app-context'
+import { usePagedRows } from '@/hooks/use-page-size'
 import { userService } from '@/services/api'
 import { formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -55,6 +57,13 @@ const PERMISSION_GROUPS: { label: string; perms: { key: Permission; label: strin
       { key: 'TEAM_MANAGE', label: 'Manage' },
     ],
   },
+  {
+    label: 'Support tickets',
+    perms: [
+      { key: 'TICKETS_VIEW', label: 'View' },
+      { key: 'TICKETS_MANAGE', label: 'Assign / manage' },
+    ],
+  },
 ]
 
 type CustomRole = {
@@ -96,6 +105,8 @@ export function TeamPage() {
       `${m.firstName} ${m.lastName} ${m.email} ${m.role}`.toLowerCase().includes(query),
     )
   }, [data, q])
+
+  const { page, setPage, pageSize, paged, total } = usePagedRows(filtered, q)
 
   const togglePerm = (p: Permission) => {
     setRolePerms((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]))
@@ -148,7 +159,7 @@ export function TeamPage() {
       ) : null}
 
       <DataTable columns={['Name', 'Email', 'Role', 'Status', 'Last active', 'Events assigned', 'Actions']}>
-        {filtered.map((m) => (
+        {paged.map((m) => (
           <tr key={m.id} className="hover:bg-muted/30">
             <td className="px-4 py-3">
               <div className="flex items-center gap-2">
@@ -169,27 +180,56 @@ export function TeamPage() {
             <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(m.lastActive)}</td>
             <td className="px-4 py-3">{m.eventIds.length}</td>
             <td className="px-4 py-3">
-              <div className="flex flex-wrap gap-1">
-                <Button size="sm" variant="outline" disabled={!canManage} onClick={() => toast.message('Edit (mock)')}>
-                  Edit
-                </Button>
-                <Button size="sm" variant="outline" disabled={!canManage} onClick={() => toast.message('Role changed (mock)')}>
-                  Change role
-                </Button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  className={tableActionIconClass}
+                  disabled={!canManage}
+                  aria-label={`Edit ${m.firstName} ${m.lastName}`}
+                  title="Edit"
+                  onClick={() => toast.message('Edit (mock)')}
+                >
+                  <Pencil className="size-4" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  className={tableActionIconClass}
+                  disabled={!canManage}
+                  aria-label={`Change role for ${m.firstName}`}
+                  title="Change role"
+                  onClick={() => toast.message('Role changed (mock)')}
+                >
+                  <UserCog className="size-4" aria-hidden />
+                </button>
                 {m.status === 'invited' ? (
-                  <Button size="sm" variant="ghost" disabled={!canManage} onClick={() => toast.success('Invitation resent')}>
-                    Resend
-                  </Button>
+                  <button
+                    type="button"
+                    className={tableActionIconClass}
+                    disabled={!canManage}
+                    aria-label={`Resend invitation to ${m.firstName}`}
+                    title="Resend invitation"
+                    onClick={() => toast.success('Invitation resent')}
+                  >
+                    <Send className="size-4" aria-hidden />
+                  </button>
                 ) : null}
-                <Button size="sm" variant="ghost" disabled={!canManage} onClick={() => toast.message('Deactivated')}>
-                  Deactivate
-                </Button>
+                <button
+                  type="button"
+                  className={tableActionIconDanger}
+                  disabled={!canManage}
+                  aria-label={`Deactivate ${m.firstName}`}
+                  title="Deactivate"
+                  onClick={() => toast.message('Deactivated')}
+                >
+                  <Ban className="size-4" aria-hidden />
+                </button>
               </div>
             </td>
           </tr>
         ))}
       </DataTable>
-      {filtered.length === 0 ? <p className="mt-4 text-sm text-muted-foreground">No team members match your search.</p> : null}
+      <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
+      {total === 0 ? <p className="mt-4 text-sm text-muted-foreground">No team members match your search.</p> : null}
 
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
         <DialogContent>

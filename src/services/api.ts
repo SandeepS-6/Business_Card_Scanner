@@ -146,6 +146,11 @@ export const templateService = {
       (t) => (orgId && t.orgId === orgId) || (includeGlobal && t.kind === 'global') || (!orgId && t.kind === 'global'),
     )
   },
+  /** Platform overview: every template with its orgId association. */
+  async listAll() {
+    await delay(200)
+    return templates
+  },
 }
 
 export const commService = {
@@ -277,26 +282,35 @@ export const searchService = {
   },
 }
 
+const MOCK_PEOPLE = [
+  { firstName: 'Jordan', lastName: 'Lee', title: 'VP Partnerships', company: 'Brightwave Labs', email: 'jordan.lee@brightwave.io', phone: '+1 (415) 555-0198', city: 'San Francisco', website: 'www.brightwave.io' },
+  { firstName: 'Priya', lastName: 'Shah', title: 'Head of Growth', company: 'Nimbus Health', email: 'priya.shah@nimbus.health', phone: '+1 (646) 555-0142', city: 'New York', website: 'www.nimbus.health' },
+  { firstName: 'Marcus', lastName: 'Chen', title: 'Founder', company: 'Alloy Robotics', email: 'marcus@alloy.bot', phone: '+1 (650) 555-0177', city: 'Palo Alto', website: 'www.alloy.bot' },
+  { firstName: 'Elena', lastName: 'Rossi', title: 'Director Sales', company: 'Northwind Soft', email: 'elena.rossi@northwind.io', phone: '+1 (312) 555-0110', city: 'Chicago', website: 'www.northwind.io' },
+  { firstName: 'Sam', lastName: 'Okoye', title: 'Product Lead', company: 'Cascade AI', email: 'sam@cascade.ai', phone: '+1 (206) 555-0133', city: 'Seattle', website: 'www.cascade.ai' },
+]
+
 export const ocrService = {
-  async process(_imageDataUrl: string): Promise<OcrResult> {
-    await delay(2800)
+  async process(imageDataUrl: string, seed = 0): Promise<OcrResult> {
+    await delay(seed > 0 ? 900 : 2800)
+    const p = MOCK_PEOPLE[seed % MOCK_PEOPLE.length]!
     return {
-      imageUrl: _imageDataUrl || cardImg,
+      imageUrl: imageDataUrl || cardImg,
       fields: {
-        firstName: { value: 'Jordan', confidence: 'high' },
-        lastName: { value: 'Lee', confidence: 'high' },
-        fullName: { value: 'Jordan Lee', confidence: 'high' },
-        jobTitle: { value: 'VP Partnerships', confidence: 'medium' },
-        company: { value: 'Brightwave Labs', confidence: 'high' },
-        email: { value: 'jordan.lee@brightwave.io', confidence: 'high' },
-        phone: { value: '+1 (415) 555-0198', confidence: 'medium' },
+        firstName: { value: p.firstName, confidence: 'high' },
+        lastName: { value: p.lastName, confidence: 'high' },
+        fullName: { value: `${p.firstName} ${p.lastName}`, confidence: 'high' },
+        jobTitle: { value: p.title, confidence: 'medium' },
+        company: { value: p.company, confidence: 'high' },
+        email: { value: p.email, confidence: 'high' },
+        phone: { value: p.phone, confidence: 'medium' },
         altPhone: { value: '', confidence: 'low' },
-        website: { value: 'www.brightwave.io', confidence: 'medium' },
-        address: { value: '88 Spear St', confidence: 'low' },
-        city: { value: 'San Francisco', confidence: 'medium' },
-        state: { value: 'CA', confidence: 'high' },
+        website: { value: p.website, confidence: 'medium' },
+        address: { value: '', confidence: 'low' },
+        city: { value: p.city, confidence: 'medium' },
+        state: { value: '', confidence: 'low' },
         country: { value: 'USA', confidence: 'high' },
-        postalCode: { value: '94105', confidence: 'low' },
+        postalCode: { value: '', confidence: 'low' },
         linkedin: { value: '', confidence: 'low' },
         notes: { value: '', confidence: 'low' },
       },

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PageHeader } from '@/components/shared/page-header'
-import { DataTable } from '@/components/shared/data-table'
+import { DataTable, Pagination } from '@/components/shared/data-table'
 import { SearchField } from '@/components/shared/search-field'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useApp } from '@/context/app-context'
+import { usePagedRows } from '@/hooks/use-page-size'
 import { can } from '@/security/permissions'
 import { automationService } from '@/services/features-api'
 import { formatDateTime } from '@/lib/utils'
@@ -74,6 +75,8 @@ export function AutomationsPage() {
     return data.filter((a) => `${a.name} ${a.trigger} ${a.status} ${a.createdBy}`.toLowerCase().includes(query))
   }, [data, q])
 
+  const { page, setPage, pageSize, paged, total } = usePagedRows(filtered, q)
+
   const setStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: AutomationStatus }) =>
       automationService.setStatus(id, status),
@@ -95,76 +98,79 @@ export function AutomationsPage() {
         <SearchField value={q} onChange={setQ} placeholder="Search automations…" />
       </div>
       {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
-      {!isLoading && filtered.length === 0 ? (
+      {!isLoading && total === 0 ? (
         <EmptyState title="No automations" description={q ? 'No automations match your search.' : 'Create a rule to automate follow-ups and tags.'} />
       ) : (
-        <DataTable columns={['Name', 'Status', 'Trigger', 'Last run', 'Runs', 'Success', 'Created by', 'Updated', 'Actions']}>
-          {filtered.map((a) => (
-            <tr key={a.id}>
-              <td className="px-4 py-3 font-medium">
-                <Link className="hover:underline" to={`/automations/${a.id}`}>
-                  {a.name}
-                </Link>
-              </td>
-              <td className="px-4 py-3">
-                <Badge variant={statusVariant(a.status)}>{a.status.toUpperCase()}</Badge>
-              </td>
-              <td className="px-4 py-3">{a.trigger}</td>
-              <td className="px-4 py-3 whitespace-nowrap">{a.lastRunAt ? formatDateTime(a.lastRunAt) : '—'}</td>
-              <td className="px-4 py-3">{a.runs}</td>
-              <td className="px-4 py-3">{a.successRate}%</td>
-              <td className="px-4 py-3">{a.createdBy}</td>
-              <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(a.updatedAt)}</td>
-              <td className="px-4 py-3">
-                <div className="flex flex-wrap gap-1">
-                  <Button size="sm" variant="outline" onClick={() => navigate(`/automations/${a.id}`)}>
-                    Edit
-                  </Button>
-                  {canManage && a.status === 'active' ? (
-                    <Button size="sm" variant="ghost" onClick={() => setStatus.mutate({ id: a.id, status: 'paused' })}>
-                      Pause
+        <>
+          <DataTable columns={['Name', 'Status', 'Trigger', 'Last run', 'Runs', 'Success', 'Created by', 'Updated', 'Actions']}>
+            {paged.map((a) => (
+              <tr key={a.id} className="hover:bg-muted/30">
+                <td className="px-4 py-3 font-medium">
+                  <Link className="hover:underline" to={`/automations/${a.id}`}>
+                    {a.name}
+                  </Link>
+                </td>
+                <td className="px-4 py-3">
+                  <Badge variant={statusVariant(a.status)}>{a.status.toUpperCase()}</Badge>
+                </td>
+                <td className="px-4 py-3">{a.trigger}</td>
+                <td className="px-4 py-3 whitespace-nowrap">{a.lastRunAt ? formatDateTime(a.lastRunAt) : '—'}</td>
+                <td className="px-4 py-3">{a.runs}</td>
+                <td className="px-4 py-3">{a.successRate}%</td>
+                <td className="px-4 py-3">{a.createdBy}</td>
+                <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(a.updatedAt)}</td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-1">
+                    <Button size="sm" variant="outline" onClick={() => navigate(`/automations/${a.id}`)}>
+                      Edit
                     </Button>
-                  ) : null}
-                  {canManage && a.status !== 'active' ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setStatus.mutate({ id: a.id, status: 'active' })
-                        toast.success('Activated')
-                      }}
-                    >
-                      Activate
-                    </Button>
-                  ) : null}
-                  {canManage ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        const copy: AutomationRule = {
-                          ...a,
-                          id: `auto-${Date.now()}`,
-                          name: `${a.name} (copy)`,
-                          status: 'draft',
-                          runs: 0,
-                          successRate: 0,
-                          updatedAt: new Date().toISOString(),
-                        }
-                        void automationService.save(copy).then(() => {
-                          toast.success('Duplicated')
-                          void qc.invalidateQueries({ queryKey: ['automations'] })
-                        })
-                      }}
-                    >
-                      Duplicate
-                    </Button>
-                  ) : null}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </DataTable>
+                    {canManage && a.status === 'active' ? (
+                      <Button size="sm" variant="ghost" onClick={() => setStatus.mutate({ id: a.id, status: 'paused' })}>
+                        Pause
+                      </Button>
+                    ) : null}
+                    {canManage && a.status !== 'active' ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setStatus.mutate({ id: a.id, status: 'active' })
+                          toast.success('Activated')
+                        }}
+                      >
+                        Activate
+                      </Button>
+                    ) : null}
+                    {canManage ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          const copy: AutomationRule = {
+                            ...a,
+                            id: `auto-${Date.now()}`,
+                            name: `${a.name} (copy)`,
+                            status: 'draft',
+                            runs: 0,
+                            successRate: 0,
+                            updatedAt: new Date().toISOString(),
+                          }
+                          void automationService.save(copy).then(() => {
+                            toast.success('Duplicated')
+                            void qc.invalidateQueries({ queryKey: ['automations'] })
+                          })
+                        }}
+                      >
+                        Duplicate
+                      </Button>
+                    ) : null}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </DataTable>
+          <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
+        </>
       )}
     </div>
   )
@@ -207,6 +213,8 @@ export function AutomationBuilderPage() {
     queryFn: () => automationService.runs(existing!.id),
     enabled: !!existing?.id,
   })
+  const { page: runsPage, setPage: setRunsPage, pageSize: runsPageSize, paged: pagedRuns, total: runsTotal } =
+    usePagedRows(runs)
 
   const save = useMutation({
     mutationFn: async (status: AutomationStatus) => {
@@ -423,8 +431,8 @@ export function AutomationBuilderPage() {
         <div className="mt-8">
           <h2 className="mb-3 font-display text-lg font-semibold">Run history</h2>
           <DataTable columns={['When', 'Trigger', 'Contact', 'Result', 'Duration', 'Actions', 'Error']}>
-            {runs.map((r) => (
-              <tr key={r.id}>
+            {pagedRuns.map((r) => (
+              <tr key={r.id} className="hover:bg-muted/30">
                 <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(r.ranAt)}</td>
                 <td className="px-4 py-3">{r.trigger}</td>
                 <td className="px-4 py-3">{r.contactName}</td>
@@ -439,6 +447,7 @@ export function AutomationBuilderPage() {
               </tr>
             ))}
           </DataTable>
+          <Pagination page={runsPage} pageSize={runsPageSize} total={runsTotal} onChange={setRunsPage} />
         </div>
       ) : null}
 

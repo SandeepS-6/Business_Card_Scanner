@@ -182,7 +182,16 @@ export const ticketService = {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       messages: [],
-      history: [{ id: `h-${Date.now()}`, text: 'Created', at: new Date().toISOString() }],
+      history: [
+        {
+          id: `h-${Date.now()}`,
+          text: `Ticket created by ${partial.requester}`,
+          at: new Date().toISOString(),
+        },
+        ...(partial.assignee
+          ? [{ id: `h-${Date.now()}-a`, text: `Assigned to ${partial.assignee}`, at: new Date().toISOString() }]
+          : []),
+      ],
     }
     tickets = [t, ...tickets]
     return t
@@ -204,7 +213,7 @@ export const ticketService = {
               ...t.history,
               {
                 id: `h-${Date.now()}`,
-                text: asInternal ? 'Internal note' : 'Reply added',
+                text: asInternal ? `Internal note by ${author}` : `Reply added by ${author}`,
                 at: new Date().toISOString(),
               },
             ],
@@ -212,11 +221,26 @@ export const ticketService = {
         : t,
     )
   },
-  async update(id: string, patch: Partial<SupportTicket>) {
+  async update(id: string, patch: Partial<Pick<SupportTicket, 'status' | 'priority' | 'assignee' | 'category'>>) {
     await delay(200)
-    tickets = tickets.map((t) =>
-      t.id === id ? { ...t, ...patch, updatedAt: new Date().toISOString() } : t,
-    )
+    tickets = tickets.map((t) => {
+      if (t.id !== id) return t
+      const at = new Date().toISOString()
+      const events: SupportTicket['history'] = []
+      if (patch.assignee !== undefined && patch.assignee !== t.assignee) {
+        events.push({ id: `h-${Date.now()}-a`, text: `Assigned to ${patch.assignee || 'Unassigned'}`, at })
+      }
+      if (patch.status !== undefined && patch.status !== t.status) {
+        events.push({ id: `h-${Date.now()}-s`, text: `Status → ${patch.status}`, at })
+      }
+      if (patch.priority !== undefined && patch.priority !== t.priority) {
+        events.push({ id: `h-${Date.now()}-p`, text: `Priority → ${patch.priority}`, at })
+      }
+      if (patch.category !== undefined && patch.category !== t.category) {
+        events.push({ id: `h-${Date.now()}-c`, text: `Category → ${patch.category}`, at })
+      }
+      return { ...t, ...patch, updatedAt: at, history: [...t.history, ...events] }
+    })
   },
 }
 

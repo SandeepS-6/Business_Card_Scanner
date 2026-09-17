@@ -2,13 +2,14 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PageHeader } from '@/components/shared/page-header'
-import { DataTable } from '@/components/shared/data-table'
+import { DataTable, Pagination } from '@/components/shared/data-table'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useApp } from '@/context/app-context'
+import { usePagedRows } from '@/hooks/use-page-size'
 import { syncCenterService } from '@/services/features-api'
 import { formatDateTime } from '@/lib/utils'
 import type { SyncConflict, SyncRecord } from '@/types/features'
@@ -49,6 +50,8 @@ export function SyncCenterPage() {
     }
     return c
   }, [records])
+
+  const { page, setPage, pageSize, paged, total } = usePagedRows(records)
 
   const resolve = useMutation({
     mutationFn: ({ id, choice }: { id: string; choice: 'mine' | 'server' }) =>
@@ -111,51 +114,54 @@ export function SyncCenterPage() {
       {!isLoading && records.length === 0 ? (
         <EmptyState title="Nothing to sync" description="Pending uploads and CRM pushes appear here." />
       ) : (
-        <DataTable columns={['Item', 'Created', 'Status', 'Retries', 'Error', 'Actions']}>
-          {records.map((r) => {
-            const tone = syncTone(r.status)
-            return (
-              <tr key={r.id}>
-                <td className="px-4 py-3 font-medium">{r.label}</td>
-                <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(r.createdAt)}</td>
-                <td className="px-4 py-3">
-                  <Badge variant={tone.variant}>{tone.label}</Badge>
-                </td>
-                <td className="px-4 py-3">{r.retryCount}</td>
-                <td className="px-4 py-3 text-destructive">{r.error ?? '—'}</td>
-                <td className="px-4 py-3">
-                  <div className="flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={async () => {
-                        await syncCenterService.retry(r.id)
-                        toast.success('Retrying…')
-                        void qc.invalidateQueries({ queryKey: ['sync-records'] })
-                      }}
-                    >
-                      Retry
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => toast.message(r.label)}>
-                      View
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={async () => {
-                        await syncCenterService.remove(r.id)
-                        toast.success('Removed')
-                        void qc.invalidateQueries({ queryKey: ['sync-records'] })
-                      }}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            )
-          })}
-        </DataTable>
+        <>
+          <DataTable columns={['Item', 'Created', 'Status', 'Retries', 'Error', 'Actions']}>
+            {paged.map((r) => {
+              const tone = syncTone(r.status)
+              return (
+                <tr key={r.id} className="hover:bg-muted/30">
+                  <td className="px-4 py-3 font-medium">{r.label}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(r.createdAt)}</td>
+                  <td className="px-4 py-3">
+                    <Badge variant={tone.variant}>{tone.label}</Badge>
+                  </td>
+                  <td className="px-4 py-3">{r.retryCount}</td>
+                  <td className="px-4 py-3 text-destructive">{r.error ?? '—'}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          await syncCenterService.retry(r.id)
+                          toast.success('Retrying…')
+                          void qc.invalidateQueries({ queryKey: ['sync-records'] })
+                        }}
+                      >
+                        Retry
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => toast.message(r.label)}>
+                        View
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={async () => {
+                          await syncCenterService.remove(r.id)
+                          toast.success('Removed')
+                          void qc.invalidateQueries({ queryKey: ['sync-records'] })
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </DataTable>
+          <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
+        </>
       )}
 
       <ConfirmDialog

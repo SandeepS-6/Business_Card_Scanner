@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { BarChart3, CalendarPlus, ClipboardList, Contact, Download, Table2, UserPlus } from 'lucide-react'
+import { BarChart3, CalendarPlus, ClipboardList, Contact, Download, ScanLine, Sparkles, Table2, Target, UserPlus } from 'lucide-react'
 import { useApp } from '@/context/app-context'
 import { PageHeader } from '@/components/shared/page-header'
+import { MetricCard } from '@/components/shared/metric-card'
 import { CapturePanel } from '@/components/capture/capture-panel'
 import { AppChart, type AppChartHandle } from '@/components/charts/app-chart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -63,14 +64,10 @@ export function HomePage() {
   const rangeLabel = period === 'daily' ? 'Jul 09 - Sep 09' : 'Jul - Sep 2026'
 
   const kpis = [
-    { label: 'Cards Scanned', value: stats?.cardsScanned },
-    { label: 'Contacts Created', value: stats?.contactsCreated },
-    { label: 'Leads', value: stats?.leads },
-    { label: 'Qualified Leads', value: stats?.qualifiedLeads },
-    { label: 'Follow-ups Pending', value: stats?.followUpsPending },
-    { label: 'High Intent Leads', value: stats?.highIntentLeads },
-    { label: 'OCR Success Rate', value: stats ? `${stats.ocrSuccessRate}%` : undefined },
-    { label: 'Duplicate Rate', value: stats ? `${stats.duplicateRate}%` : undefined },
+    { label: 'Cards Scanned', value: stats?.cardsScanned, icon: ScanLine, change: 12 },
+    { label: 'Contacts Created', value: stats?.contactsCreated, icon: Contact, change: 8 },
+    { label: 'Leads', value: stats?.leads, icon: Target, change: 10 },
+    { label: 'Qualified Leads', value: stats?.qualifiedLeads, icon: Sparkles, change: 6 },
   ]
 
   return (
@@ -81,58 +78,38 @@ export function HomePage() {
       />
 
       <div className="mb-8 grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <CapturePanel
-          heading="Capture business cards"
-          instructions="Use the camera or upload images, then confirm to run OCR review."
-          help="Tip: batch upload works best with the offline queue when Wi‑Fi is weak."
-        />
+        <CapturePanel />
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             {isLoading
               ? Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)
-              : kpis.slice(0, 4).map((k) => (
-                  <Card key={k.label}>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">{k.label}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="font-display text-2xl font-semibold">{k.value ?? '—'}</p>
-                    </CardContent>
-                  </Card>
+              : kpis.map((k) => (
+                  <MetricCard
+                    key={k.label}
+                    label={k.label}
+                    value={k.value}
+                    icon={k.icon}
+                    change={k.change}
+                  />
                 ))}
           </div>
         </div>
       </div>
 
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {isLoading
-          ? Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={`k2-${i}`} />)
-          : kpis.slice(4).map((k) => (
-              <Card key={k.label}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">{k.label}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="font-display text-2xl font-semibold">{k.value ?? '—'}</p>
-                </CardContent>
-              </Card>
-            ))}
-      </div>
-
-      <div className="mb-6 overflow-hidden rounded-lg bg-card">
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-muted/60 px-4 py-3">
-          <h2 className="min-w-0 font-display text-base font-semibold text-foreground">
+      <div className="mb-6 overflow-hidden rounded-lg border border-border bg-card">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-primary bg-primary px-4 py-3 text-primary-foreground">
+          <h2 className="min-w-0 text-sm font-medium text-primary-foreground">
             Cards scanned ({period === 'daily' ? 'daily' : 'monthly'}) ({rangeLabel})
           </h2>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex h-9 items-center rounded-full bg-background/80 p-0.5" role="group" aria-label="Period">
+            <div className="inline-flex h-9 items-center rounded-full bg-primary-foreground/15 p-0.5" role="group" aria-label="Period">
               <button
                 type="button"
                 className={cn(
                   'h-8 rounded-full px-3 text-sm transition-colors',
                   period === 'daily'
-                    ? 'bg-primary text-sm font-semibold text-primary-foreground'
-                    : 'text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground',
+                    ? 'bg-primary-foreground text-sm font-semibold text-primary'
+                    : 'text-sm font-medium text-primary-foreground/80 hover:bg-primary-foreground/10 hover:text-primary-foreground',
                 )}
                 aria-pressed={period === 'daily'}
                 onClick={() => setPeriod('daily')}
@@ -144,8 +121,8 @@ export function HomePage() {
                 className={cn(
                   'h-8 rounded-full px-3 text-sm transition-colors',
                   period === 'monthly'
-                    ? 'bg-primary text-sm font-semibold text-primary-foreground'
-                    : 'text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground',
+                    ? 'bg-primary-foreground text-sm font-semibold text-primary'
+                    : 'text-sm font-medium text-primary-foreground/80 hover:bg-primary-foreground/10 hover:text-primary-foreground',
                 )}
                 aria-pressed={period === 'monthly'}
                 onClick={() => setPeriod('monthly')}
@@ -158,7 +135,10 @@ export function HomePage() {
                 type="button"
                 size="icon"
                 variant="ghost"
-                className={cn('size-9', view === 'chart' && 'bg-primary/10 text-primary')}
+                className={cn(
+                  'size-9 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground',
+                  view === 'chart' && 'bg-primary-foreground/20',
+                )}
                 aria-label="Chart view"
                 aria-pressed={view === 'chart'}
                 onClick={() => setView('chart')}
@@ -169,7 +149,10 @@ export function HomePage() {
                 type="button"
                 size="icon"
                 variant="ghost"
-                className={cn('size-9', view === 'table' && 'bg-primary/10 text-primary')}
+                className={cn(
+                  'size-9 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground',
+                  view === 'table' && 'bg-primary-foreground/20',
+                )}
                 aria-label="Table view"
                 aria-pressed={view === 'table'}
                 onClick={() => setView('table')}
@@ -181,7 +164,7 @@ export function HomePage() {
                   type="button"
                   size="icon"
                   variant="ghost"
-                  className="size-9"
+                  className="size-9 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
                   aria-label="Download"
                   aria-haspopup="menu"
                   disabled={!canExport}
@@ -238,7 +221,7 @@ export function HomePage() {
               categoryKey="day"
               series={[{ key: 'scans', label: 'Cards scanned' }]}
               rows={scanRows}
-              height={260}
+              height={176}
               loading={isLoading}
               canExport={canExport}
               emptyMessage="No scan activity for this period."

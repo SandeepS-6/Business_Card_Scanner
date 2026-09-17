@@ -64,20 +64,21 @@ export function NotificationItemCard({
                   {expanded ? 'Show less' : 'Show more'}
                 </button>
               ) : null}
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                <time dateTime={item.createdAt} title={formatDateTime(item.createdAt)}>
-                  {notificationRelativeTime(item.createdAt)}
-                </time>
-                <span aria-hidden> · </span>
-                <span>{config.label}</span>
-              </p>
+              <p className="mt-1.5 text-xs text-muted-foreground">{config.label}</p>
             </div>
 
-            <div className="flex shrink-0 items-center gap-2 pt-1">
+            <div className="flex shrink-0 items-center gap-2 pt-0.5">
+              <time
+                className="text-xs text-muted-foreground"
+                dateTime={item.createdAt}
+                title={formatDateTime(item.createdAt)}
+              >
+                {notificationRelativeTime(item.createdAt)}
+              </time>
               {!item.read ? (
                 <span className="size-2 rounded-full bg-primary" title="Unread" aria-label="Unread" />
               ) : (
-                <span className="sr-only">Read</span>
+                <span className="size-2 rounded-full bg-muted-foreground/25" title="Read" aria-label="Read" />
               )}
             </div>
           </div>

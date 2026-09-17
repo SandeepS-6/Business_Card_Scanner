@@ -129,7 +129,15 @@ export type SupportTicket = {
   assignee?: string
   createdAt: string
   updatedAt: string
-  messages: { id: string; author: string; body: string; at: string; internal?: boolean }[]
+  messages: {
+    id: string
+    author: string
+    body: string
+    at: string
+    internal?: boolean
+    status?: 'sent' | 'delivered' | 'read' | 'failed'
+    attachments?: { id: string; name: string; size: number; type: string; url?: string }[]
+  }[]
   history: { id: string; text: string; at: string }[]
 }
 

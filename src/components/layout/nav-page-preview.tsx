@@ -30,8 +30,6 @@ const META: Record<string, { description: string }> = {
   'platform.templates': { description: 'Global templates' },
   'platform.integrations': { description: 'Platform integrations' },
   'platform.usage': { description: 'Usage and plan limits' },
-  'platform.health': { description: 'System health checks' },
-  'platform.audit': { description: 'Platform audit logs' },
 }
 
 function Chrome({ children, className }: { children: ReactNode; className?: string }) {

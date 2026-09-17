@@ -30,3 +30,12 @@ export function initials(name: string) {
     .map((p) => p[0]?.toUpperCase() ?? '')
     .join('')
 }
+
+/** Card scan quota: unlimited when limit ≤ 0; else green <80%, amber 80–99%, red ≥100%. */
+export function cardUsageTone(used: number, limit: number): 'unlimited' | 'success' | 'warning' | 'danger' {
+  if (!Number.isFinite(limit) || limit <= 0) return 'unlimited'
+  const pct = (used / limit) * 100
+  if (pct >= 100) return 'danger'
+  if (pct >= 80) return 'warning'
+  return 'success'
+}

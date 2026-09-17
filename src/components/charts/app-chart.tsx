@@ -31,7 +31,7 @@ export const AppChart = forwardRef<AppChartHandle, AppChartProps & { bare?: bool
     id,
     title,
     description,
-    height = 260,
+    height = 200,
     loading,
     error,
     emptyMessage = 'No data for this period.',
@@ -111,16 +111,22 @@ export const AppChart = forwardRef<AppChartHandle, AppChartProps & { bare?: bool
   if (bare) return <div>{body}</div>
 
   return (
-    <Card>
-      <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
+    <Card className="overflow-hidden">
+      <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 border-b border-primary bg-primary px-4 py-3 text-primary-foreground">
         <div className="min-w-0">
-          <CardTitle className="text-base">{title}</CardTitle>
-          {description ? <CardDescription className="mt-1">{description}</CardDescription> : null}
+          <CardTitle className="text-sm font-medium text-primary-foreground">{title}</CardTitle>
+          {description ? <CardDescription className="mt-1 text-primary-foreground/80">{description}</CardDescription> : null}
         </div>
         {canExport && !loading && !error && !empty ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="shrink-0" aria-label={`Export ${title}`} disabled={busy}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="shrink-0 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                aria-label={`Export ${title}`}
+                disabled={busy}
+              >
                 <MoreHorizontal className="size-4" />
               </Button>
             </DropdownMenuTrigger>

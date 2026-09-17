@@ -41,15 +41,14 @@ export const APP_ROUTES: AppRouteMeta[] = [
   { path: '/organization', auth: true, permission: 'ORG_VIEW', tenantScoped: true },
   { path: '/audit-logs', auth: true, permission: 'AUDIT_VIEW', tenantScoped: true },
   { path: '/settings', auth: true, permission: 'SETTINGS_VIEW', tenantScoped: true },
+  { path: '/platform/integrations', auth: true },
   { path: '/unauthorized', auth: true },
   { path: '/platform/organizations', auth: true, permission: 'SUPER_ADMIN_ACCESS' },
   { path: '/platform/organizations/:id', auth: true, permission: 'SUPER_ADMIN_ACCESS' },
   { path: '/platform/users', auth: true, permission: 'SUPER_ADMIN_ACCESS' },
+  { path: '/platform/users/:id', auth: true, permission: 'SUPER_ADMIN_ACCESS' },
   { path: '/platform/templates', auth: true, permission: 'SUPER_ADMIN_ACCESS' },
-  { path: '/platform/integrations', auth: true, permission: 'SUPER_ADMIN_ACCESS' },
   { path: '/platform/usage', auth: true, permission: 'SUPER_ADMIN_ACCESS' },
-  { path: '/platform/health', auth: true, permission: 'SUPER_ADMIN_ACCESS' },
-  { path: '/platform/audit', auth: true, permission: 'SUPER_ADMIN_ACCESS' },
 ]
 
 export function isPublicPath(pathname: string) {

@@ -2,6 +2,7 @@
  * Minimal security self-check (no test framework).
  * Run: npx tsx src/security/self-check.ts
  */
+import { cardUsageTone } from '../lib/utils'
 import { can } from './permissions'
 import { sanitizeExternalUrl } from './safe-url'
 import { validateImageFiles } from './file-validation'
@@ -41,5 +42,10 @@ assert(can('user', 'COMMAND_CENTER_VIEW'), 'user can open command center')
 assert(!sanitizeHtmlForPreview('<a href="data:text/html,x">x</a>').includes('data:text'), 'block data:text urls')
 assert(sanitizeHtmlForPreview('<img src="data:image/png;base64,xx">').includes('data:image/png'), 'allow data:image')
 assert(!sanitizeHtmlForPreview('<img src=vbscript:x>').toLowerCase().includes('vbscript:'), 'block vbscript')
+
+assert(cardUsageTone(250, 500) === 'success', '50% usage is green')
+assert(cardUsageTone(400, 500) === 'warning', '80% usage is amber')
+assert(cardUsageTone(500, 500) === 'danger', '100% usage is red')
+assert(cardUsageTone(10, 0) === 'unlimited', 'limit 0 is unlimited')
 
 console.log('security self-check: ok')

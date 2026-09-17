@@ -1,7 +1,7 @@
 import type { EChartsOption } from 'echarts'
 import type { AppChartProps, BuiltChart } from '@/lib/charts/types'
 import { formatInteger } from '@/lib/charts/formatters'
-import { SERIES_PALETTE, readChartTheme, type ChartThemeTokens } from '@/lib/charts/theme'
+import { seriesPalette, readChartTheme, type ChartThemeTokens } from '@/lib/charts/theme'
 
 function categories(props: AppChartProps) {
   return props.rows.map((r) => String(r[props.categoryKey] ?? ''))
@@ -11,8 +11,10 @@ function seriesValues(props: AppChartProps, key: string) {
   return props.rows.map((r) => Number(r[key] ?? 0))
 }
 
-function baseGrid() {
-  return { left: 48, right: 16, top: 28, bottom: 36, containLabel: true }
+function baseGrid(compact: boolean) {
+  return compact
+    ? { left: 40, right: 12, top: 20, bottom: 28, containLabel: true }
+    : { left: 48, right: 16, top: 28, bottom: 36, containLabel: true }
 }
 
 function axisStyle(theme: ChartThemeTokens) {
@@ -43,17 +45,20 @@ export function buildChartOption(props: AppChartProps, theme = readChartTheme())
     ...props.series.map((s) => Number(row[s.key] ?? 0)),
   ])
 
-  const colors = props.series.map((s, i) => s.color ?? SERIES_PALETTE[i % SERIES_PALETTE.length])
+  const palette = seriesPalette(theme)
+  const colors = props.series.map((s, i) => s.color ?? palette[i % palette.length])
+  const compact = (props.height ?? 200) <= 200
 
   if (props.kind === 'doughnut') {
     const s = props.series[0]
+    const seriesName = s?.label ?? 'Share'
     const data = props.rows.map((row, i) => ({
       name: String(row[props.categoryKey] ?? ''),
       value: Number(row[s?.key ?? 'count'] ?? 0),
-      itemStyle: { color: colors[i % colors.length] },
+      itemStyle: { color: palette[i % palette.length] },
     }))
     const option: EChartsOption = {
-      color: colors,
+      color: palette,
       tooltip: {
         trigger: 'item',
         backgroundColor: theme.tooltipBg,
@@ -68,6 +73,7 @@ export function buildChartOption(props: AppChartProps, theme = readChartTheme())
       legend: { bottom: 0, textStyle: { color: theme.muted, fontSize: 11 } },
       series: [
         {
+          name: seriesName,
           type: 'pie',
           radius: ['42%', '68%'],
           center: ['50%', '46%'],
@@ -103,10 +109,10 @@ export function buildChartOption(props: AppChartProps, theme = readChartTheme())
     }
     return {
       ...base,
-      barMaxWidth: 40,
+      barMaxWidth: compact ? 28 : 40,
       showBackground: true,
       backgroundStyle: {
-        color: 'rgba(180, 180, 180, 0.2)',
+        color: theme.barTrack,
         borderRadius: [4, 4, 0, 0],
       },
     }
@@ -117,7 +123,7 @@ export function buildChartOption(props: AppChartProps, theme = readChartTheme())
     animation: true,
     animationDuration: 600,
     animationEasing: 'cubicOut',
-    grid: baseGrid(),
+    grid: baseGrid(compact),
     tooltip: {
       ...tooltip(theme),
       axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(0,0,0,0.04)' } },

@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { PageHeader } from '@/components/shared/page-header'
-import { DataTable } from '@/components/shared/data-table'
+import { MetricCard } from '@/components/shared/metric-card'
+import { DataTable, Pagination } from '@/components/shared/data-table'
 import { SearchField } from '@/components/shared/search-field'
 import { EmptyState } from '@/components/shared/empty-state'
 import { EventStatusBadge, LeadIntentBadge, LeadStatusBadge } from '@/components/shared/status-badges'
@@ -18,7 +19,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DateField } from '@/components/shared/date-field'
+import { ClipboardList, Contact, Copy, ScanLine, Sparkles, Target, UserCheck, Users } from 'lucide-react'
 import { useApp } from '@/context/app-context'
+import { usePagedRows } from '@/hooks/use-page-size'
 import { contactService, eventService, followUpService, userService } from '@/services/api'
 import { dashboardService } from '@/services/api'
 import type { CustomField, FieldType } from '@/types'
@@ -47,11 +50,13 @@ export function EventsPage() {
     defaultValues: { name: '', description: '', startDate: '', endDate: '', location: '' },
   })
 
-  const filtered = data.filter((e) => {
+  const filtered = useMemo(() => {
     const query = q.trim().toLowerCase()
-    if (!query) return true
-    return `${e.name} ${e.location} ${e.status}`.toLowerCase().includes(query)
-  })
+    if (!query) return data
+    return data.filter((e) => `${e.name} ${e.location} ${e.status}`.toLowerCase().includes(query))
+  }, [data, q])
+
+  const { page, setPage, pageSize, paged, total } = usePagedRows(filtered, q)
 
   return (
     <div>
@@ -64,12 +69,12 @@ export function EventsPage() {
         <SearchField value={q} onChange={setQ} placeholder="Search events…" />
       </div>
       {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
-      {!isLoading && filtered.length === 0 ? (
+      {!isLoading && total === 0 ? (
         <EmptyState title="No events" description={q ? 'No events match your search.' : 'Create an event to start capturing cards.'} actionLabel="Create Event" onAction={() => setOpen(true)} />
       ) : (
         <>
           <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:hidden">
-            {filtered.map((e) => (
+            {paged.map((e) => (
               <Link key={e.id} to={`/events/${e.id}`} className="rounded-lg border border-border bg-card p-4">
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-medium">{e.name}</p>
@@ -82,7 +87,7 @@ export function EventsPage() {
           </div>
           <div className="hidden lg:block">
             <DataTable columns={['Event name', 'Date', 'Location', 'Owner', 'Cards scanned', 'Contacts', 'Leads', 'Status']}>
-              {filtered.map((e) => {
+              {paged.map((e) => {
                 const owner = userService.get(e.ownerId)
                 return (
                   <tr key={e.id} className="hover:bg-muted/30">
@@ -99,6 +104,7 @@ export function EventsPage() {
               })}
             </DataTable>
           </div>
+          <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
         </>
       )}
 
@@ -179,6 +185,12 @@ export function EventDetailPage() {
   })
   const [fields, setFields] = useState<CustomField[] | null>(null)
   const charts = dashboardService.charts()
+  const eventContacts = useMemo(
+    () => (event ? contacts.filter((c) => c.eventId === event.id) : []),
+    [contacts, event],
+  )
+  const { page: contactsPage, setPage: setContactsPage, pageSize: contactsPageSize, paged: pagedContacts, total: contactsTotal } =
+    usePagedRows(eventContacts)
 
   if (eventLoading || !organization) return <p className="text-sm text-muted-foreground">Loading event…</p>
   if (isFetched && !event) {
@@ -186,17 +198,21 @@ export function EventDetailPage() {
   }
   if (!event) return <p className="text-sm text-muted-foreground">Loading event…</p>
   const customFields = fields ?? event.customFields
-  const eventContacts = contacts.filter((c) => c.eventId === event.id)
 
   const metrics = [
-    { label: 'Cards scanned', value: event.cardsScanned },
-    { label: 'Successful extraction', value: Math.round(event.cardsScanned * 0.94) },
-    { label: 'Needs review', value: Math.round(event.cardsScanned * 0.08) },
-    { label: 'Duplicates', value: Math.round(event.cardsScanned * 0.06) },
-    { label: 'Unique contacts', value: event.contactsCount },
-    { label: 'Qualified leads', value: Math.round(event.leadsCount * 0.37) },
-    { label: 'High Intent leads', value: Math.round(event.leadsCount * 0.14) },
-    { label: 'Follow-ups pending', value: followUps.filter((f) => f.eventId === event.id && f.status === 'pending').length },
+    { label: 'Cards scanned', value: event.cardsScanned, icon: ScanLine, change: 12 },
+    { label: 'Successful extraction', value: Math.round(event.cardsScanned * 0.94), icon: UserCheck, change: 8 },
+    { label: 'Needs review', value: Math.round(event.cardsScanned * 0.08), icon: ClipboardList, change: -2 },
+    { label: 'Duplicates', value: Math.round(event.cardsScanned * 0.06), icon: Copy, change: -5 },
+    { label: 'Unique contacts', value: event.contactsCount, icon: Contact, change: 10 },
+    { label: 'Qualified leads', value: Math.round(event.leadsCount * 0.37), icon: Sparkles, change: 6 },
+    { label: 'High Intent leads', value: Math.round(event.leadsCount * 0.14), icon: Target, change: 15 },
+    {
+      label: 'Follow-ups pending',
+      value: followUps.filter((f) => f.eventId === event.id && f.status === 'pending').length,
+      icon: Users,
+      change: -4,
+    },
   ]
 
   return (
@@ -216,20 +232,35 @@ export function EventDetailPage() {
         </TabsList>
         <TabsContent value="overview" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {metrics.map((m) => (
-            <Card key={m.label}><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">{m.label}</CardTitle></CardHeader><CardContent><p className="text-2xl font-semibold">{m.value}</p></CardContent></Card>
+            <MetricCard key={m.label} label={m.label} value={m.value} change={m.change} icon={m.icon} />
           ))}
         </TabsContent>
         <TabsContent value="contacts">
-          <DataTable columns={['Name', 'Company', 'Status', 'Intent']}>
-            {eventContacts.map((c) => (
-              <tr key={c.id}>
-                <td className="px-4 py-3"><Link className="text-primary hover:underline" to={`/contacts/${c.id}`}>{c.fullName}</Link></td>
-                <td className="px-4 py-3">{c.company}</td>
-                <td className="px-4 py-3"><LeadStatusBadge status={c.leadStatus} /></td>
-                <td className="px-4 py-3"><LeadIntentBadge intent={c.leadIntent} /></td>
-              </tr>
-            ))}
-          </DataTable>
+          {eventContacts.length === 0 ? (
+            <EmptyState title="No contacts" description="Contacts captured at this event appear here." />
+          ) : (
+            <>
+              <DataTable columns={['Name', 'Company', 'Status', 'Intent']}>
+                {pagedContacts.map((c) => (
+                  <tr key={c.id} className="hover:bg-muted/30">
+                    <td className="px-4 py-3">
+                      <Link className="text-primary hover:underline" to={`/contacts/${c.id}`}>
+                        {c.fullName}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3">{c.company}</td>
+                    <td className="px-4 py-3">
+                      <LeadStatusBadge status={c.leadStatus} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <LeadIntentBadge intent={c.leadIntent} />
+                    </td>
+                  </tr>
+                ))}
+              </DataTable>
+              <Pagination page={contactsPage} pageSize={contactsPageSize} total={contactsTotal} onChange={setContactsPage} />
+            </>
+          )}
         </TabsContent>
         <TabsContent value="leads"><p className="text-sm text-muted-foreground">{event.leadsCount} leads linked to this event. See Leads board for pipeline.</p></TabsContent>
         <TabsContent value="scans"><p className="text-sm text-muted-foreground">{event.cardsScanned} scans recorded (mock list).</p></TabsContent>
@@ -250,9 +281,9 @@ export function EventDetailPage() {
             title="Scans over time"
             kind="bar"
             categoryKey="day"
-            series={[{ key: 'scans', label: 'Scans' }]}
+            series={[{ key: 'scans', label: 'Cards scanned' }]}
             rows={charts.scansOverTime}
-            height={224}
+            height={180}
             canExport={canExport}
             emptyMessage="No scan activity for this event period."
           />
@@ -263,7 +294,7 @@ export function EventDetailPage() {
             categoryKey="intent"
             series={[{ key: 'count', label: 'Leads' }]}
             rows={charts.leadIntent}
-            height={224}
+            height={180}
             canExport={canExport}
             emptyMessage="No intent data for this event."
           />

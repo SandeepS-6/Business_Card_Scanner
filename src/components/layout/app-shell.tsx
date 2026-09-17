@@ -15,12 +15,12 @@ const mobileTabs = [
 
 export function AppShell() {
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-dvh overflow-hidden bg-background">
       <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <Header />
         <InstallAppPrompt />
-        <main className="flex-1 overflow-x-hidden p-4 pb-20 md:p-6 md:pb-6">
+        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4 pb-20 md:p-6 md:pb-6">
           <Outlet />
         </main>
         <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border bg-card md:hidden" aria-label="Mobile">
